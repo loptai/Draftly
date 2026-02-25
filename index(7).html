@@ -1,0 +1,2155 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Draftly — Superliga Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080f1a;
+  --bg2: #0d1829;
+  --glass: rgba(255,255,255,0.06);
+  --glass-md: rgba(255,255,255,0.09);
+  --glass-hover: rgba(255,255,255,0.12);
+  --border: rgba(255,255,255,0.1);
+  --blue: #3b82f6;
+  --teal: #14b8a6;
+  --purple: #8b5cf6;
+  --gold: #f59e0b;
+  --red: #ef4444;
+  --green: #22c55e;
+  --text: #f0f4ff;
+  --text-soft: rgba(240,244,255,0.65);
+  --text-muted: rgba(240,244,255,0.35);
+  --font-display: 'Barlow Condensed', sans-serif;
+  --font-body: 'Barlow', sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;color:var(--text);font-family:var(--font-body);}
+body{
+  background:
+    radial-gradient(ellipse at 75% 55%,rgba(40,80,200,0.40) 0%,transparent 50%),
+    radial-gradient(ellipse at 15% 25%,rgba(100,50,160,0.30) 0%,transparent 45%),
+    radial-gradient(ellipse at 50% 100%,rgba(10,40,100,0.5) 0%,transparent 55%),
+    linear-gradient(150deg,#1a2240 0%,#141e38 45%,#0e1628 100%);
+  background-attachment:fixed;
+}
+/* Fixed orbs — only show in app, hidden on landing */
+.app-orb{position:fixed;border-radius:50%;filter:blur(90px);z-index:0;pointer-events:none;}
+.app-orb-1{width:600px;height:600px;background:rgba(90,180,255,0.09);top:-150px;right:-100px;}
+.app-orb-2{width:450px;height:450px;background:rgba(180,130,250,0.09);bottom:-100px;left:-80px;}
+.app-orb-3{width:350px;height:350px;background:rgba(61,221,200,0.06);top:35%;left:35%;}
+
+/* ── UTILS ── */
+.hidden{display:none!important;}
+.glass{background:var(--glass);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(20px);}
+.glass-md{background:var(--glass-md);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(20px);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border-radius:10px;border:none;font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;}
+.btn-primary{background:linear-gradient(135deg,var(--blue),var(--teal));color:#fff;box-shadow:0 4px 16px rgba(59,130,246,0.3);}
+.btn-primary:hover{box-shadow:0 6px 24px rgba(59,130,246,0.45);transform:translateY(-1px);}
+.btn-ghost{background:var(--glass);border:1px solid var(--border);color:var(--text-soft);}
+.btn-ghost:hover{background:var(--glass-hover);color:var(--text);}
+.btn-danger{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;}
+.btn-danger:hover{background:rgba(239,68,68,0.25);}
+
+/* ── AUTH MODAL ── */
+.auth-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;}
+.auth-logo-mark{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:20px;font-weight:900;color:#fff;box-shadow:0 4px 16px rgba(59,130,246,0.4);}
+.auth-logo-text{font-family:var(--font-display);font-size:28px;font-weight:800;letter-spacing:1px;}
+.auth-logo-text span{color:var(--teal);}
+.auth-tabs{display:flex;gap:4px;background:rgba(0,0,0,0.3);border-radius:10px;padding:4px;margin-bottom:24px;}
+.auth-tab{flex:1;padding:8px;border-radius:7px;border:none;background:none;color:rgba(240,244,255,0.4);font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;}
+.auth-tab.active{background:rgba(255,255,255,0.09);color:var(--text);border:1px solid rgba(255,255,255,0.1);}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:12px;font-weight:600;color:rgba(240,244,255,0.35);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
+.form-group input{width:100%;padding:11px 14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--text);font-family:var(--font-body);font-size:14px;transition:border-color .15s;}
+.form-group input:focus{outline:none;border-color:var(--blue);}
+.form-group input::placeholder{color:rgba(240,244,255,0.25);}
+.auth-error{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:10px 14px;font-size:13px;color:#fca5a5;margin-bottom:16px;}
+.auth-success{background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:10px 14px;font-size:13px;color:#86efac;margin-bottom:16px;}
+
+/* ── APP LAYOUT ── */
+#app{display:flex;flex-direction:column;min-height:100vh;position:relative;z-index:1;}
+.app-topbar{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;height:60px;
+  background:rgba(14,22,40,0.72);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-bottom:1px solid rgba(255,255,255,0.1);
+  padding:0 24px;
+}
+.app-logo{display:flex;align-items:center;gap:9px;flex-shrink:0;margin-right:auto;cursor:pointer;}
+.app-logo-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:16px;font-weight:900;color:#fff;box-shadow:0 4px 14px rgba(59,130,246,0.35);}
+.app-logo-text{font-family:var(--font-display);font-size:20px;font-weight:800;letter-spacing:.5px;color:#fff;}
+.app-logo-text span{color:var(--teal);}
+.app-topbar-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.app-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.13);border-radius:20px;padding:5px 14px;font-size:12.5px;font-weight:600;color:rgba(255,255,255,0.6);white-space:nowrap;cursor:default;}
+.app-chip .v{color:#fff;font-weight:700;}
+.app-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));border:2px solid rgba(255,255,255,0.2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:13px;font-weight:700;color:#fff;transition:transform .15s;}
+.app-avatar:hover{transform:scale(1.08);}
+
+/* ── MAIN CONTENT ── */
+.main{flex:1;padding:0 20px 60px;}
+.app-inner{max-width:1060px;margin:0 auto;}
+.page{display:none;padding-top:28px;flex-direction:column;gap:20px;}
+.page.active{display:flex;animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.page-header{margin-bottom:24px;}
+.page-title{font-family:var(--font-display);font-size:32px;font-weight:800;letter-spacing:.5px;}
+.page-sub{font-size:14px;color:var(--text-soft);margin-top:4px;}
+
+/* ── DASHBOARD ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{padding:18px;text-align:center;}
+.stat-val{font-family:var(--font-display);font-size:36px;font-weight:900;line-height:1;}
+.stat-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);margin-top:4px;}
+.stat-card.blue .stat-val{color:var(--blue);}
+.stat-card.teal .stat-val{color:var(--teal);}
+.stat-card.gold .stat-val{color:var(--gold);}
+.stat-card.purple .stat-val{color:var(--purple);}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.card-title{font-family:var(--font-display);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;color:var(--text-soft);}
+
+/* ── PITCH ── */
+.pitch-wrap{border-radius:14px;position:relative;overflow:hidden;aspect-ratio:5/6;background:radial-gradient(ellipse at 50% 50%,rgba(22,90,50,0.95),rgba(6,24,14,1));border:1px solid rgba(255,255,255,0.07);}
+.pitch-wrap svg.field{position:absolute;inset:0;width:100%;height:100%;}
+.pd{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;z-index:2;cursor:default;}
+.p-badge{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:11px;font-weight:900;letter-spacing:.5px;border:2px solid rgba(255,255,255,0.25);box-shadow:0 4px 12px rgba(0,0,0,0.5);position:relative;transition:transform .15s;}
+.p-badge:hover{transform:scale(1.1);}
+.p-badge-abbr{line-height:1;}
+.chip-cap{position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:#000;border:2px solid rgba(8,16,28,.8);z-index:2;}
+.pd-name{font-size:10px;font-weight:800;color:#fff;white-space:nowrap;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);padding:2px 8px;border-radius:20px;border:1px solid rgba(255,255,255,0.18);}
+.pd-pts{font-size:9px;font-weight:700;color:var(--teal);white-space:nowrap;}
+
+/* ── BYG HOLD ── */
+.byg-layout{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;}
+.pool-header{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.pool-search{width:100%;padding:8px 12px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:var(--font-body);}
+.pool-search:focus{outline:none;border-color:var(--blue);}
+.pos-btns{display:flex;gap:4px;flex-wrap:wrap;}
+.pos-btn{padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:var(--glass);color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;transition:all .12s;}
+.pos-btn.active{background:rgba(59,130,246,0.2);border-color:var(--blue);color:var(--text);}
+.pool-list{display:flex;flex-direction:column;gap:4px;max-height:500px;overflow-y:auto;}
+.pool-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;transition:background .12s;border:1px solid transparent;}
+.pool-row:hover{background:var(--glass-hover);}
+.pool-row.in-team{opacity:.3;pointer-events:none;}
+.pool-row.cant-afford{opacity:.4;pointer-events:none;}
+.pool-row.wrong-pos{opacity:.25;pointer-events:none;}
+.pool-row.selected-slot{border-color:var(--blue);background:rgba(59,130,246,0.1);}
+.pr-badge{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:9px;font-weight:900;flex-shrink:0;border:1.5px solid rgba(255,255,255,0.2);}
+.pr-info{flex:1;}
+.pr-name{font-size:13px;font-weight:600;}
+.pr-club{font-size:11px;color:var(--text-muted);}
+.pr-pos{font-size:11px;font-weight:700;}
+.pr-price{font-size:12px;font-weight:700;color:var(--teal);white-space:nowrap;}
+.pr-pts{font-size:11px;font-weight:700;color:var(--text-muted);}
+.slot-hint{font-size:12px;color:var(--text-muted);padding:10px;text-align:center;border:1px dashed var(--border);border-radius:10px;margin-bottom:10px;}
+.slot-hint.selecting{border-color:var(--blue);color:var(--blue);background:rgba(59,130,246,0.06);}
+
+/* ── RANGLISTE ── */
+.lb-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;margin-bottom:6px;background:var(--glass);border:1px solid transparent;transition:background .12s;}
+.lb-row:hover{background:var(--glass-hover);}
+.lb-row.me{border-color:var(--blue);background:rgba(59,130,246,0.08);}
+.lb-rank{font-family:var(--font-display);font-size:20px;font-weight:900;width:36px;text-align:center;color:var(--text-muted);}
+.lb-rank.top3{color:var(--gold);}
+.lb-info{flex:1;}
+.lb-name{font-size:14px;font-weight:600;}
+.lb-team{font-size:12px;color:var(--text-muted);}
+.lb-pts{font-family:var(--font-display);font-size:22px;font-weight:800;color:var(--teal);}
+
+/* ── LIGAER ── */
+.league-card{padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;gap:14px;}
+.league-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,0.3),rgba(139,92,246,0.3));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.league-info{flex:1;}
+.league-name{font-size:15px;font-weight:700;}
+.league-meta{font-size:12px;color:var(--text-muted);}
+.league-rank{font-family:var(--font-display);font-size:24px;font-weight:900;color:var(--gold);}
+.code-display{background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-family:monospace;font-size:16px;font-weight:700;letter-spacing:3px;color:var(--teal);text-align:center;cursor:pointer;user-select:all;}
+.two-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+
+/* ── BUDGET ── */
+.budget-bar-wrap{background:rgba(0,0,0,0.3);border-radius:6px;height:6px;overflow:hidden;margin:8px 0;}
+.budget-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--teal),var(--blue));transition:width .3s;}
+.budget-nums{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);}
+.budget-nums span:last-child{color:var(--teal);font-weight:600;}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:rgba(20,30,50,0.95);border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:14px;font-weight:500;z-index:999;transition:transform .25s;pointer-events:none;backdrop-filter:blur(20px);}
+#toast.show{transform:translateX(-50%) translateY(0);}
+#toast.success{border-color:rgba(34,197,94,0.4);color:#86efac;}
+#toast.error{border-color:rgba(239,68,68,0.4);color:#fca5a5;}
+
+/* ── LOADING ── */
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:40px auto;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-screen{display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:16px;}
+.loading-logo{font-family:var(--font-display);font-size:40px;font-weight:900;background:linear-gradient(135deg,var(--blue),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+
+/* ═══════════════════════════════════════════
+   DOCK NAVIGATION
+═══════════════════════════════════════════ */
+
+/* Push page content above dock */
+.main{flex:1;padding:0 20px 96px;}
+
+.app-bottomnav{
+  position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+  z-index:90;
+  display:flex;align-items:center;gap:2px;
+  height:64px;
+  background:rgba(12,18,36,0.82);
+  backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);
+  border:1px solid rgba(255,255,255,0.13);
+  border-radius:22px;
+  padding:0 10px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.45),0 0 0 1px rgba(255,255,255,0.05) inset;
+  /* width is auto — only as wide as content */
+}
+
+/* Regular dock item */
+.bn-item{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;background:none;border:none;cursor:pointer;
+  color:rgba(240,244,255,0.45);
+  padding:6px 12px;border-radius:14px;
+  position:relative;transition:background .15s,color .15s,transform .15s;
+  white-space:nowrap;
+}
+.bn-item:hover{
+  background:rgba(255,255,255,0.08);
+  color:rgba(240,244,255,0.85);
+  transform:translateY(-2px);
+}
+.bn-item.active{color:#fff;}
+.bn-item.active .bn-icon svg{stroke:var(--blue);}
+.bn-item.active .bn-lbl{color:var(--blue);}
+
+/* Active dot */
+.bn-item.active::after{
+  content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
+  width:4px;height:4px;border-radius:50%;background:var(--blue);
+}
+
+.bn-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
+.bn-icon svg{width:20px;height:20px;transition:stroke .15s;}
+.bn-lbl{font-size:9.5px;font-weight:700;letter-spacing:.3px;}
+
+/* Dock divider */
+.bn-divider{width:1px;height:32px;background:rgba(255,255,255,0.1);margin:0 4px;flex-shrink:0;}
+
+/* Centre "Byg Hold" elevated button */
+.bn-center{padding:0 8px;}
+.bn-center::after{display:none;}
+.bn-center-btn{
+  width:44px;height:44px;border-radius:14px;
+  background:linear-gradient(135deg,var(--blue),var(--teal));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 18px rgba(59,130,246,0.5);
+  transition:transform .15s,box-shadow .15s;
+}
+.bn-center-btn svg{width:20px;height:20px;stroke:#fff;}
+.bn-center:hover{background:none;transform:none;}
+.bn-center:hover .bn-center-btn{transform:scale(1.1) translateY(-3px);box-shadow:0 8px 28px rgba(59,130,246,0.65);}
+.bn-center.active .bn-center-btn{background:linear-gradient(135deg,var(--teal),var(--blue));}
+.bn-center .bn-lbl{color:rgba(240,244,255,0.5);margin-top:2px;}
+.bn-center.active .bn-lbl{color:var(--teal);}
+
+/* "Mere" button — mobile only */
+.bn-more-btn{display:none;}
+
+/* More menu popup (mobile) */
+.bn-more-overlay{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);}
+.bn-more-panel{
+  position:fixed;bottom:88px;left:50%;transform:translateX(-50%);z-index:151;
+  width:min(300px,calc(100vw - 32px));
+  background:rgba(12,20,38,0.98);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:20px;padding:8px;
+  box-shadow:0 24px 60px rgba(0,0,0,0.6);
+  backdrop-filter:blur(24px);
+  animation:slideUpIn .18s ease;
+}
+@keyframes slideUpIn{from{opacity:0;transform:translateX(-50%) translateY(12px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+.bn-more-header{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-muted);padding:8px 12px 4px;}
+.bn-more-item{
+  width:100%;display:flex;align-items:center;gap:12px;
+  padding:11px 12px;border-radius:12px;border:none;
+  background:none;cursor:pointer;transition:background .12s;text-align:left;
+}
+.bn-more-item:hover{background:rgba(255,255,255,0.07);}
+.bn-more-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.bn-more-icon svg{width:18px;height:18px;}
+.bn-more-lbl{font-size:14px;font-weight:600;color:var(--text);}
+.bn-more-sub{font-size:11px;color:var(--text-muted);margin-top:1px;}
+.bn-more-arrow{width:16px;height:16px;flex-shrink:0;margin-left:auto;color:var(--text-muted);}
+.bn-more-divider{height:1px;background:rgba(255,255,255,0.07);margin:6px 4px;}
+
+/* ── RESPONSIVE: small screens collapse to mobile dock ── */
+@media(max-width:720px){
+  .app-bottomnav{
+    bottom:0;left:0;right:0;transform:none;
+    width:100%;border-radius:0;border-left:none;border-right:none;border-bottom:none;
+    justify-content:space-around;
+    padding:0 4px;
+    padding-bottom:env(safe-area-inset-bottom);
+    box-shadow:0 -1px 0 rgba(255,255,255,0.08);
+  }
+  .bn-item{flex:1;padding:6px 4px;}
+  .bn-item:hover{transform:none;}
+  .bn-divider{display:none;}
+  /* Hide statistik + ligaer items — they go in "Mere" */
+  #bn-statistik,#bn-ligaer{display:none;}
+  .bn-more-btn{display:flex;}
+  .main{padding-bottom:80px;}
+}
+
+
+.ph-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.ph-row .page-title{font-family:var(--font-display);font-size:32px;font-weight:800;}
+.ph-row .page-sub{font-size:14px;color:var(--text-soft);margin-top:2px;}
+
+/* ── MINE HOLD ── */
+.hold-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
+.hold-card{background:var(--glass-md);border:1px solid var(--border);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:16px;transition:border-color .15s;}
+.hold-card:hover{border-color:rgba(59,130,246,0.35);}
+.hold-card.primary{border-color:rgba(59,130,246,0.45);background:rgba(59,130,246,0.07);}
+.hold-card-top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.hold-card-name{font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-.3px;}
+.hold-primary-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.4);color:var(--blue);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase;}
+.hold-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.hold-stat{background:rgba(0,0,0,0.2);border-radius:12px;padding:10px 12px;}
+.hold-stat-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);margin-bottom:4px;}
+.hold-stat-val{font-family:var(--font-display);font-size:20px;font-weight:800;}
+.hold-stat-val.rank{color:var(--gold);}
+.hold-stat-val.value{color:var(--teal);}
+.hold-stat-val.up{color:var(--green);}
+.hold-stat-val.down{color:var(--red);}
+.hold-card-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-sm{padding:7px 14px;font-size:12px;font-weight:700;border-radius:8px;}
+
+/* ── BYG HOLD redesign ── */
+.byg-layout{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start;}
+.byg-budget-bar{display:flex;align-items:center;gap:0;padding:14px 20px;border-radius:16px;flex-wrap:wrap;gap:8px;}
+.byg-budget-item{display:flex;flex-direction:column;gap:3px;padding:0 16px;}
+.byg-budget-item:first-child{padding-left:0;}
+.byg-budget-divider{width:1px;height:32px;background:rgba(255,255,255,0.1);}
+.byg-budget-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);}
+.byg-budget-val{font-family:var(--font-display);font-size:18px;font-weight:800;}
+.byg-budget-val.red{color:#fb7185;}
+.byg-budget-val.teal{color:var(--teal);}
+.byg-budget-progress-wrap{width:120px;height:6px;background:rgba(0,0,0,0.3);border-radius:4px;overflow:hidden;}
+.byg-budget-progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--teal),var(--blue));transition:width .3s;}
+/* ── FORMATION DROPDOWN ── */
+.form-dropdown-wrap{position:relative;}
+.form-dropdown-btn{display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.09);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;font-family:var(--font-display);letter-spacing:.5px;}
+.form-dropdown-btn:hover{background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.28);}
+.form-dropdown-btn svg{opacity:.6;transition:transform .2s;}
+.form-dropdown-btn.open svg{transform:rotate(180deg);}
+.form-dropdown-panel{position:absolute;top:calc(100% + 8px);right:0;z-index:200;background:rgba(12,20,38,0.97);border:1px solid rgba(255,255,255,0.14);border-radius:18px;padding:16px;backdrop-filter:blur(24px);box-shadow:0 24px 60px rgba(0,0,0,0.6);min-width:380px;}
+.form-dropdown-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.form-card{border-radius:12px;padding:10px 8px 8px;cursor:pointer;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;align-items:center;gap:7px;transition:all .15s;}
+.form-card:hover:not(.form-card-disabled){background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.25);}
+.form-card.form-card-active{background:rgba(59,130,246,0.2);border-color:var(--blue);}
+.form-card.form-card-disabled{opacity:.35;cursor:not-allowed;filter:grayscale(0.3);}
+.form-mini-pitch{width:56px;height:64px;background:radial-gradient(ellipse at 50% 60%,rgba(26,100,55,0.95),rgba(8,28,16,1));border-radius:7px;border:1px solid rgba(255,255,255,0.12);position:relative;display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;padding:5px 4px;}
+.form-mini-row{display:flex;justify-content:center;gap:4px;width:100%;}
+.form-mini-dot{width:7px;height:7px;border-radius:50%;background:#fff;opacity:.9;}
+.form-mini-dot.gk{width:7px;height:7px;background:#fbbf24;}
+.form-mini-name{font-family:var(--font-display);font-size:11px;font-weight:800;color:var(--text-soft);letter-spacing:.5px;}
+.form-card.form-card-active .form-mini-name{color:#fff;}
+.form-card-disabled-tag{font-size:9px;font-weight:700;color:rgba(240,244,255,0.4);letter-spacing:.3px;text-transform:uppercase;}
+
+/* ── RANGLISTE redesign ── */
+.lb-header{display:flex;align-items:center;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.2);}
+.lb-hcol{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);}
+.lb-row{display:flex;align-items:center;gap:0;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.06);transition:background .12s;}
+.lb-row:last-child{border-bottom:none;}
+.lb-row:hover{background:rgba(255,255,255,0.04);}
+.lb-row.me{background:rgba(59,130,246,0.08);border-left:3px solid var(--blue);}
+.lb-rank{font-family:var(--font-display);font-size:18px;font-weight:900;width:48px;text-align:center;color:var(--text-muted);}
+.lb-rank.top3{color:var(--gold);}
+.lb-info{flex:1;min-width:0;}
+.lb-name{font-size:14px;font-weight:600;}
+.lb-team{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lb-val{width:90px;text-align:right;font-size:13px;font-weight:600;color:var(--teal);}
+.lb-pts{font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--text);width:80px;text-align:right;}
+.rank-my-pos{padding:10px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.rank-my-num{font-family:var(--font-display);font-size:28px;font-weight:900;color:var(--gold);}
+
+/* ── STATISTIK ── */
+.stat-row{display:flex;align-items:center;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.06);transition:background .12s;}
+.stat-row:last-child{border-bottom:none;}
+.stat-row:hover{background:rgba(255,255,255,0.04);}
+.stat-badge{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:9px;font-weight:900;flex-shrink:0;border:1.5px solid rgba(255,255,255,0.2);margin-right:12px;}
+.stat-player-name{font-size:14px;font-weight:600;flex:1;}
+.stat-club{width:70px;text-align:center;font-size:12px;color:var(--text-muted);}
+.stat-pos-badge{width:70px;text-align:center;}
+.stat-pos-pill{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.5px;}
+.stat-price{width:90px;text-align:right;font-size:13px;font-weight:700;color:var(--teal);}
+.stat-pts{width:80px;text-align:right;font-family:var(--font-display);font-size:20px;font-weight:800;}
+
+/* ── LIGAER redesign ── */
+.liga-card{background:var(--glass-md);border:1px solid var(--border);border-radius:20px;overflow:hidden;margin-bottom:16px;}
+.liga-card-header{display:flex;align-items:center;gap:14px;padding:18px 20px;border-bottom:1px solid rgba(255,255,255,0.07);}
+.liga-card-icon{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,rgba(59,130,246,0.3),rgba(139,92,246,0.3));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.liga-card-info{flex:1;}
+.liga-card-name{font-family:var(--font-display);font-size:20px;font-weight:800;}
+.liga-card-meta{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.liga-card-code{font-family:monospace;font-size:13px;font-weight:700;letter-spacing:2px;color:var(--teal);background:rgba(20,184,166,0.1);border:1px solid rgba(20,184,166,0.2);padding:3px 10px;border-radius:6px;cursor:pointer;}
+.liga-standings{padding:0;}
+.liga-standings-header{display:flex;padding:8px 20px;background:rgba(0,0,0,0.15);}
+.liga-row{display:flex;align-items:center;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,0.05);}
+.liga-row:last-child{border-bottom:none;}
+.liga-row.me{background:rgba(59,130,246,0.08);border-left:3px solid var(--blue);}
+.liga-row-rank{font-family:var(--font-display);font-size:18px;font-weight:900;width:36px;color:var(--text-muted);}
+.liga-row-rank.top3{color:var(--gold);}
+.liga-row-info{flex:1;}
+.liga-row-name{font-size:14px;font-weight:600;}
+.liga-row-team{font-size:12px;color:var(--text-muted);}
+.liga-row-pts{font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--text);}
+
+/* ── RESPONSIVE PAGES ── */
+@media(max-width:900px){
+  .byg-layout{grid-template-columns:1fr;}
+  .hold-cards{grid-template-columns:1fr;}
+}
+@media(max-width:600px){
+  .byg-budget-bar{gap:12px;}
+  .byg-budget-divider{display:none;}
+  .ph-row{flex-direction:column;align-items:flex-start;}
+}
+
+
+
+/* ═══════════════════════════════════════════
+   LANDING PAGE
+═══════════════════════════════════════════ */
+#landing{min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;}
+
+/* Nav */
+.lp-nav{display:flex;align-items:center;justify-content:space-between;padding:20px 40px;position:fixed;top:0;left:0;right:0;z-index:50;background:rgba(8,15,26,0.7);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06);}
+.lp-nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.lp-nav-logo-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:17px;font-weight:900;color:#fff;box-shadow:0 0 20px rgba(59,130,246,0.4);}
+.lp-nav-logo-text{font-family:var(--font-display);font-size:24px;font-weight:800;letter-spacing:1px;color:var(--text);}
+.lp-nav-logo-text span{color:var(--teal);}
+.lp-nav-actions{display:flex;align-items:center;gap:10px;}
+
+/* Hero */
+.lp-hero{min-height:100vh;display:flex;align-items:center;padding:120px 40px 80px;position:relative;overflow:hidden;}
+.lp-hero-bg{position:absolute;inset:0;pointer-events:none;}
+.lp-hero-orb1{position:absolute;top:-200px;left:-200px;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,0.15) 0%,transparent 70%);animation:orbFloat 8s ease-in-out infinite;}
+.lp-hero-orb2{position:absolute;bottom:-300px;right:-200px;width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(20,184,166,0.1) 0%,transparent 70%);animation:orbFloat 10s ease-in-out infinite reverse;}
+.lp-hero-orb3{position:absolute;top:40%;left:40%;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,0.08) 0%,transparent 70%);animation:orbFloat 12s ease-in-out infinite 2s;}
+@keyframes orbFloat{0%,100%{transform:translate(0,0);}50%{transform:translate(30px,20px);}}
+
+.lp-hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;max-width:1200px;margin:0 auto;width:100%;position:relative;z-index:2;}
+.lp-hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:1px;margin-bottom:20px;}
+.lp-hero-badge::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--blue);animation:pulse 2s ease infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.lp-hero-title{font-family:var(--font-display);font-size:72px;font-weight:900;line-height:.95;letter-spacing:-1px;margin-bottom:20px;}
+.lp-hero-title span{background:linear-gradient(135deg,var(--blue),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.lp-hero-sub{font-size:18px;color:var(--text-soft);line-height:1.6;margin-bottom:36px;max-width:460px;}
+.lp-hero-ctas{display:flex;gap:12px;flex-wrap:wrap;}
+.btn-hero{padding:14px 28px;font-size:16px;font-weight:700;border-radius:12px;}
+.lp-hero-stats{display:flex;gap:28px;margin-top:36px;}
+.lp-hero-stat{text-align:center;}
+.lp-hero-stat-val{font-family:var(--font-display);font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--blue),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.lp-hero-stat-lbl{font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px;}
+
+/* Pitch preview */
+.lp-pitch-preview{position:relative;padding-top:28px;}
+.lp-pitch-preview-inner{border-radius:20px;overflow:hidden;position:relative;aspect-ratio:5/6;background:radial-gradient(ellipse at 50% 50%,rgba(22,90,50,0.95),rgba(6,24,14,1));border:1px solid rgba(255,255,255,0.1);box-shadow:0 40px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.05),inset 0 1px 0 rgba(255,255,255,0.1);animation:pitchFloat 6s ease-in-out infinite;}
+@keyframes pitchFloat{0%,100%{transform:translateY(0) rotateX(0deg);}50%{transform:translateY(-12px) rotateX(2deg);}}
+.lp-pitch-glow{position:absolute;inset:-2px;border-radius:22px;background:linear-gradient(135deg,rgba(59,130,246,0.3),rgba(20,184,166,0.2));z-index:-1;filter:blur(20px);}
+.lp-pitch-pill{position:absolute;top:-16px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--blue),var(--teal));border-radius:20px;padding:6px 16px;font-family:var(--font-display);font-size:13px;font-weight:800;letter-spacing:.5px;white-space:nowrap;box-shadow:0 4px 16px rgba(59,130,246,0.4);}
+
+/* Features */
+.lp-features{padding:100px 40px;max-width:1200px;margin:0 auto;width:100%;}
+.lp-section-label{text-align:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--teal);margin-bottom:12px;}
+.lp-section-title{text-align:center;font-family:var(--font-display);font-size:48px;font-weight:900;margin-bottom:16px;}
+.lp-section-sub{text-align:center;font-size:16px;color:var(--text-soft);margin-bottom:60px;max-width:540px;margin-left:auto;margin-right:auto;}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.feature-card{padding:28px;border-radius:20px;background:var(--glass);border:1px solid var(--border);transition:all .2s;position:relative;overflow:hidden;}
+.feature-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(255,255,255,0.02));pointer-events:none;}
+.feature-card:hover{background:var(--glass-md);transform:translateY(-4px);box-shadow:0 20px 40px rgba(0,0,0,0.3);}
+.feature-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px;}
+.feature-icon.blue{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.25);}
+.feature-icon.teal{background:rgba(20,184,166,0.15);border:1px solid rgba(20,184,166,0.25);}
+.feature-icon.gold{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.25);}
+.feature-icon.purple{background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.25);}
+.feature-icon.red{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.25);}
+.feature-icon.green{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.25);}
+.feature-title{font-family:var(--font-display);font-size:20px;font-weight:800;margin-bottom:8px;letter-spacing:.3px;}
+.feature-desc{font-size:14px;color:var(--text-soft);line-height:1.6;}
+
+/* How it works */
+.lp-how{padding:80px 40px;background:rgba(255,255,255,0.02);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.lp-how-inner{max-width:1000px;margin:0 auto;}
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:60px;}
+.step{text-align:center;position:relative;}
+.step::after{content:'→';position:absolute;top:32px;right:-16px;font-size:24px;color:var(--text-muted);display:block;}
+.step:last-child::after{display:none;}
+.step-num{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:28px;font-weight:900;margin:0 auto 16px;box-shadow:0 8px 24px rgba(59,130,246,0.3);}
+.step-title{font-family:var(--font-display);font-size:20px;font-weight:800;margin-bottom:8px;}
+.step-desc{font-size:14px;color:var(--text-soft);line-height:1.6;}
+
+/* CTA section */
+.lp-cta{padding:100px 40px;text-align:center;position:relative;overflow:hidden;}
+.lp-cta-inner{max-width:600px;margin:0 auto;position:relative;z-index:2;}
+.lp-cta-title{font-family:var(--font-display);font-size:56px;font-weight:900;line-height:1;margin-bottom:16px;}
+.lp-cta-title span{background:linear-gradient(135deg,var(--blue),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.lp-cta-sub{font-size:16px;color:var(--text-soft);margin-bottom:36px;}
+.lp-cta-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(59,130,246,0.1),transparent 70%);pointer-events:none;}
+
+/* Footer */
+.lp-footer{padding:24px 40px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.lp-footer-logo{font-family:var(--font-display);font-size:18px;font-weight:800;letter-spacing:1px;}
+.lp-footer-logo span{color:var(--teal);}
+.lp-footer-copy{font-size:12px;color:var(--text-muted);}
+
+/* Signup modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal-card{width:100%;max-width:420px;padding:36px;background:rgba(13,24,41,0.98);border:1px solid var(--border);border-radius:24px;transform:scale(.95) translateY(20px);transition:transform .2s;box-shadow:0 40px 80px rgba(0,0,0,0.6);}
+.modal-overlay.open .modal-card{transform:scale(1) translateY(0);}
+.modal-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;background:var(--glass);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .12s;}
+.modal-close:hover{background:var(--glass-hover);color:var(--text);}
+
+/* ── DASHBOARD RICH UI ── */
+.dash-team-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px;}
+.dash-team-name{font-family:var(--font-display);font-size:30px;font-weight:800;letter-spacing:-.5px;line-height:1;}
+.dash-team-sub{font-size:13px;color:var(--text-muted);font-weight:500;}
+.dash-deadline-tag{display:inline-flex;align-items:center;gap:7px;background:var(--glass);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--text-soft);align-self:flex-start;margin-top:6px;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal);flex-shrink:0;}
+.dash-tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+.dash-tile{border-radius:18px;padding:22px 14px 18px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;border:1px solid rgba(255,255,255,0.13);backdrop-filter:blur(12px);transition:transform .18s ease,border-color .18s,box-shadow .18s;min-height:120px;text-align:center;}
+.dash-tile:hover{transform:translateY(-4px);border-color:rgba(255,255,255,0.25);box-shadow:0 16px 40px rgba(0,0,0,0.25);}
+.dash-tile-ico{width:44px;height:44px;flex-shrink:0;}
+.dash-tile-ico svg{width:44px;height:44px;}
+.dash-tile-lbl{font-size:12px;font-weight:700;color:var(--text);letter-spacing:.3px;text-transform:uppercase;}
+.dash-tile-sub{font-size:10.5px;color:rgba(255,255,255,0.5);line-height:1.3;}
+.dt-blue{background:linear-gradient(145deg,rgba(59,130,246,0.42),rgba(37,99,235,0.28));}
+.dt-teal{background:linear-gradient(145deg,rgba(20,184,166,0.42),rgba(13,148,136,0.28));}
+.dt-purple{background:linear-gradient(145deg,rgba(139,92,246,0.42),rgba(109,40,217,0.28));}
+.dt-pink{background:linear-gradient(145deg,rgba(236,72,153,0.42),rgba(190,24,93,0.28));}
+.dt-orange{background:linear-gradient(145deg,rgba(249,115,22,0.42),rgba(194,65,12,0.28));}
+.dash-main-grid{display:grid;grid-template-columns:1fr 310px;gap:16px;align-items:start;}
+.dash-pitch-card{background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.dash-card-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.dash-card-title{font-size:14px;font-weight:700;color:var(--text);}
+.dash-right-col{display:flex;flex-direction:column;gap:14px;}
+.dash-glass-card{background:var(--glass-md);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:18px;padding:18px;}
+.dash-gc-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--text-muted);margin-bottom:14px;}
+.dash-rank-big{text-align:center;padding:8px 0 14px;}
+.dash-rank-num{font-family:var(--font-display);font-size:44px;font-weight:800;color:var(--text);letter-spacing:-2px;line-height:1;}
+.dash-rank-sub{font-size:12px;color:var(--text-muted);margin-top:4px;}
+.dash-stat-rows{display:flex;flex-direction:column;}
+.dash-sr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);}
+.dash-sr:last-child{border-bottom:none;}
+.dash-sr-l{font-size:13px;color:var(--text-soft);font-weight:500;}
+.dash-sr-v{font-size:13px;font-weight:700;color:var(--text);}
+.dash-sr-v.up{color:var(--teal);}
+.dash-mini-liga{display:flex;flex-direction:column;}
+.dash-kamp-list{display:flex;flex-direction:column;}
+.dash-kamp-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);}
+.dash-kamp-row:last-child{border-bottom:none;}
+.dash-kamp-n{font-size:13px;font-weight:600;color:var(--text-soft);}
+.dash-kamp-t{font-size:12px;font-weight:700;color:var(--blue);}
+.dash-kamp-t.live{color:var(--teal);display:flex;align-items:center;gap:5px;}
+.dash-kamp-t.live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px var(--teal);display:inline-block;}
+.dash-ml-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);}
+.dash-ml-row:last-child{border-bottom:none;}
+.dash-ml-row.me{background:rgba(59,130,246,0.08);border-radius:8px;padding:8px;margin:0 -8px;}
+.dash-ml-rank{font-size:13px;font-weight:800;color:var(--blue);width:28px;}
+.dash-ml-name{flex:1;font-size:13px;color:var(--text-soft);}
+.dash-ml-pts{font-size:13px;font-weight:700;color:var(--text);}
+.dash-pitch{border-radius:14px;position:relative;overflow:hidden;aspect-ratio:5/6;background:radial-gradient(ellipse at 50% 50%,rgba(22,90,50,0.95) 0%,rgba(6,24,14,1) 100%);border:1px solid rgba(255,255,255,0.07);}
+.dash-pitch::before{content:"";position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse at 50% 50%,rgba(60,180,100,0.08) 0%,transparent 65%);pointer-events:none;}
+.dash-pitch svg.field{position:absolute;inset:0;width:100%;height:100%;z-index:1;}
+.dash-pd{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;z-index:10;}
+.dash-p-badge{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.45);border:2px solid rgba(255,255,255,0.25);}
+.dash-p-badge-abbr{font-size:11px;font-weight:900;letter-spacing:.5px;}
+.dash-pd-name{font-size:10px;font-weight:800;color:#fff;white-space:nowrap;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);padding:2px 7px;border-radius:20px;border:1px solid rgba(255,255,255,0.18);line-height:1.4;}
+.dash-empty-badge{width:44px;height:44px;border-radius:50%;border:2px dashed rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;opacity:.4;}
+@media(max-width:900px){
+  .dash-tiles{grid-template-columns:repeat(3,1fr);}
+  .dash-main-grid{grid-template-columns:1fr;}
+  .dash-right-col{flex-direction:row;flex-wrap:wrap;}
+  .dash-glass-card{flex:1;min-width:220px;}
+}
+@media(max-width:600px){
+  .dash-tiles{grid-template-columns:repeat(3,1fr);gap:10px;}
+  .dash-tile{padding:18px 10px 14px;min-height:100px;}
+  .dash-tile-sub{display:none;}
+  .dash-right-col{flex-direction:column;}
+}
+@media(max-width:480px){
+  .dash-tiles{grid-template-columns:repeat(2,1fr);}
+  .dash-tiles .dash-tile:nth-child(5){grid-column:span 2;}
+}
+
+/* Responsive landing */
+@media(max-width:900px){
+  .lp-hero-grid{grid-template-columns:1fr;gap:40px;}
+  .lp-hero-title{font-size:52px;}
+  .lp-pitch-preview{max-width:340px;margin:0 auto;}
+  .features-grid{grid-template-columns:1fr 1fr;}
+  .steps-grid{grid-template-columns:1fr;}
+  .step::after{content:'↓';right:50%;transform:translateX(50%);}
+  .lp-nav{padding:16px 20px;}
+  .lp-hero{padding:100px 20px 60px;}
+  .lp-features,.lp-cta{padding:60px 20px;}
+  .lp-section-title{font-size:36px;}
+}
+@media(max-width:600px){
+  .features-grid{grid-template-columns:1fr;}
+  .lp-hero-title{font-size:44px;}
+  .lp-cta-title{font-size:40px;}
+  .lp-hero-stats{gap:16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- Fixed background orbs (visible when logged in) -->
+<div class="app-orb app-orb-1"></div>
+<div class="app-orb app-orb-2"></div>
+<div class="app-orb app-orb-3"></div>
+
+<!-- Loading -->
+<div id="loading-screen" class="loading-screen">
+  <div class="loading-logo">Draftly</div>
+  <div class="spinner"></div>
+</div>
+
+<!-- LANDING PAGE -->
+<div id="landing" class="hidden">
+
+  <!-- Nav -->
+  <nav class="lp-nav">
+    <a class="lp-nav-logo" href="#">
+      <div class="lp-nav-logo-mark">D</div>
+      <div class="lp-nav-logo-text">Draft<span>ly</span></div>
+    </a>
+    <div class="lp-nav-actions">
+      <button class="btn btn-ghost" onclick="openModal('login')">Log ind</button>
+      <button class="btn btn-primary" onclick="openModal('register')">Opret gratis konto</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="lp-hero">
+    <div class="lp-hero-bg">
+      <div class="lp-hero-orb1"></div>
+      <div class="lp-hero-orb2"></div>
+      <div class="lp-hero-orb3"></div>
+    </div>
+    <div class="lp-hero-grid">
+      <div>
+        <div class="lp-hero-badge">🏆 Sæson 2025/26 er i gang</div>
+        <h1 class="lp-hero-title">Byg dit<br><span>drømmehold</span><br>i Superligaen</h1>
+        <p class="lp-hero-sub">Vælg spillere fra alle 14 Superliga-klubber, tjen point baseret på rigtige kampe og udfordre dine venner i private miniligaer.</p>
+        <div class="lp-hero-ctas">
+          <button class="btn btn-primary btn-hero" onclick="openModal('register')">🚀 Kom i gang — det er gratis</button>
+          <button class="btn btn-ghost btn-hero" onclick="openModal('login')">Log ind</button>
+        </div>
+        <div class="lp-hero-stats">
+          <div class="lp-hero-stat"><div class="lp-hero-stat-val">50M</div><div class="lp-hero-stat-lbl">Budget</div></div>
+          <div class="lp-hero-stat"><div class="lp-hero-stat-val">11</div><div class="lp-hero-stat-lbl">Spillere</div></div>
+          <div class="lp-hero-stat"><div class="lp-hero-stat-val">3</div><div class="lp-hero-stat-lbl">Formationer</div></div>
+          <div class="lp-hero-stat"><div class="lp-hero-stat-val">∞</div><div class="lp-hero-stat-lbl">Miniligaer</div></div>
+        </div>
+      </div>
+      <div class="lp-pitch-preview">
+        <div class="lp-pitch-glow"></div>
+        <div class="lp-pitch-pill">⚽ Sæson 2025/26</div>
+        <div class="lp-pitch-preview-inner">
+          <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 500 580" preserveAspectRatio="xMidYMid slice">
+            <defs><pattern id="lp-sf" x="0" y="0" width="500" height="72" patternUnits="userSpaceOnUse"><rect width="500" height="36" fill="rgba(22,90,50,0.55)"/><rect y="36" width="500" height="36" fill="rgba(16,72,40,0.55)"/></pattern></defs>
+            <rect width="500" height="580" fill="url(#lp-sf)"/>
+            <rect x="18" y="14" width="464" height="552" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" rx="2"/>
+            <line x1="18" y1="290" x2="482" y2="290" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+            <circle cx="250" cy="290" r="58" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.5"/>
+            <circle cx="250" cy="290" r="4" fill="rgba(255,255,255,0.32)"/>
+            <rect x="118" y="14" width="264" height="96" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+            <rect x="178" y="14" width="144" height="40" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+            <rect x="198" y="5" width="104" height="12" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
+            <rect x="118" y="470" width="264" height="96" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+            <rect x="178" y="526" width="144" height="40" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+            <rect x="198" y="563" width="104" height="12" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
+          </svg>
+          <!-- Preview players -->
+          <div style="position:absolute;left:50%;top:14%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:#cc0e1e;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;border:2px solid rgba(255,255,255,0.25);box-shadow:0 4px 12px rgba(0,0,0,0.5);">FCM</div>
+            <div style="font-size:9px;font-weight:800;color:#fff;white-space:nowrap;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:20px;">Höjlund</div>
+          </div>
+          <div style="position:absolute;left:22%;top:27%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:#e8171f;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;border:2px solid rgba(255,255,255,0.25);box-shadow:0 4px 12px rgba(0,0,0,0.5);">FCN</div>
+            <div style="font-size:9px;font-weight:800;color:#fff;white-space:nowrap;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:20px;">Skov Olsen</div>
+          </div>
+          <div style="position:absolute;left:78%;top:27%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:#f5f5f5;color:#111;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;border:2px solid rgba(255,255,255,0.25);box-shadow:0 4px 12px rgba(0,0,0,0.5);">FCK</div>
+            <div style="font-size:9px;font-weight:800;color:#fff;white-space:nowrap;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:20px;">Falk</div>
+          </div>
+          <div style="position:absolute;left:34%;top:43%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:#e8171f;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;border:2px solid rgba(255,255,255,0.25);box-shadow:0 4px 12px rgba(0,0,0,0.5);">FCN</div>
+            <div style="font-size:9px;font-weight:800;color:#fff;white-space:nowrap;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:20px;">Kirial</div>
+          </div>
+          <div style="position:absolute;left:66%;top:43%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:#006b3c;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;border:2px solid rgba(255,255,255,0.25);box-shadow:0 4px 12px rgba(0,0,0,0.5);">VFF</div>
+            <div style="font-size:9px;font-weight:800;color:#fff;white-space:nowrap;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:20px;">Mensah</div>
+          </div>
+          <div style="position:absolute;left:9%;top:62%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:#f6d000;color:#003a8c;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;border:2px solid rgba(255,255,255,0.25);box-shadow:0 4px 12px rgba(0,0,0,0.5);">BIF</div>
+            <div style="font-size:9px;font-weight:800;color:#fff;white-space:nowrap;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:20px;">Uhre</div>
+          </div>
+          <div style="position:absolute;left:32%;top:62%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:#cc0e1e;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;border:2px solid rgba(255,255,255,0.25);box-shadow:0 4px 12px rgba(0,0,0,0.5);">FCM</div>
+            <div style="font-size:9px;font-weight:800;color:#fff;white-space:nowrap;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:20px;">Fenger</div>
+          </div>
+          <div style="position:absolute;left:68%;top:62%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:#1a3d8f;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;border:2px solid rgba(255,255,255,0.25);box-shadow:0 4px 12px rgba(0,0,0,0.5);">AGF</div>
+            <div style="font-size:9px;font-weight:800;color:#fff;white-space:nowrap;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:20px;">Boysen</div>
+          </div>
+          <div style="position:absolute;left:91%;top:62%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:#0047b0;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;border:2px solid rgba(255,255,255,0.25);box-shadow:0 4px 12px rgba(0,0,0,0.5);">OB</div>
+            <div style="font-size:9px;font-weight:800;color:#fff;white-space:nowrap;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:20px;">Levi</div>
+          </div>
+          <div style="position:absolute;left:50%;top:87%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:#f5f5f5;color:#111;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:900;border:2px solid rgba(255,255,255,0.25);box-shadow:0 4px 12px rgba(0,0,0,0.5);">FCK</div>
+            <div style="font-size:9px;font-weight:800;color:#fff;white-space:nowrap;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:20px;">Rönnow</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="lp-features">
+    <div class="lp-section-label">Funktioner</div>
+    <h2 class="lp-section-title">Alt hvad du behøver</h2>
+    <p class="lp-section-sub">Draftly giver dig de samme redskaber som de store platforms — men med fokus på dansk Superliga.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon blue">⚽</div>
+        <div class="feature-title">Byg dit hold</div>
+        <div class="feature-desc">Vælg 11 spillere fra alle Superliga-klubber inden for et budget på 50 mio. kr. Tre formationer at vælge imellem.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon teal">📊</div>
+        <div class="feature-title">Live Point</div>
+        <div class="feature-desc">Tjen point baseret på rigtige kampe. Mål, assists, clean sheets, gule og røde kort — alt tæller.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon gold">🏆</div>
+        <div class="feature-title">Miniligaer</div>
+        <div class="feature-desc">Opret en privat liga og invitér dine venner med en unik kode. Se hvem der er den bedste manager.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon purple">💰</div>
+        <div class="feature-title">Spillerværdier</div>
+        <div class="feature-desc">Spillernes priser afspejler deres form og præstationer. Hold øje med de billige perler før alle andre.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon red">🔄</div>
+        <div class="feature-title">Transfervindue</div>
+        <div class="feature-desc">Skift spillere mellem runerne. Tilpas dit hold til kommende kampe og udnyt formen optimalt.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon green">📱</div>
+        <div class="feature-title">Altid med dig</div>
+        <div class="feature-desc">Draftly fungerer perfekt på både telefon og computer. Følg med fra tribunen, sofaen eller baren.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="lp-how">
+    <div class="lp-how-inner">
+      <div class="lp-section-label">Sådan virker det</div>
+      <h2 class="lp-section-title">Kom i gang på 3 minutter</h2>
+      <div class="steps-grid">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-title">Opret en gratis konto</div>
+          <div class="step-desc">Tilmeld dig med din e-mail på under et minut. Ingen kreditkort, ingen forpligtelse.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-title">Byg dit drømmehold</div>
+          <div class="step-desc">Vælg 11 spillere inden for budgettet. Analyser statistik og find de skjulte gems.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-title">Udfordre dine venner</div>
+          <div class="step-desc">Invitér venner til en privat miniliga og se hvem der kender Superligaen bedst.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="lp-cta">
+    <div class="lp-cta-bg"></div>
+    <div class="lp-cta-inner">
+      <h2 class="lp-cta-title">Klar til at blive<br><span>Superliga Manager?</span></h2>
+      <p class="lp-cta-sub">Tilmeld dig gratis og byg dit hold inden næste runde.</p>
+      <button class="btn btn-primary btn-hero" onclick="openModal('register')">🚀 Opret gratis konto nu</button>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="lp-footer">
+    <div class="lp-footer-logo">Draft<span>ly</span></div>
+    <div class="lp-footer-copy">© 2026 Draftly · Uofficielt fan-produkt · Ikke tilknyttet Superliga A/S</div>
+  </footer>
+</div>
+
+<!-- Auth Modal -->
+<div id="auth-modal" class="modal-overlay" onclick="closeModalIfBg(event)">
+  <div class="modal-card" style="position:relative;">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="auth-logo">
+      <div class="auth-logo-mark">D</div>
+      <div class="auth-logo-text">Draft<span>ly</span></div>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Log ind</button>
+      <button class="auth-tab" onclick="switchTab('register')">Opret konto</button>
+    </div>
+    <div id="auth-message"></div>
+    <div id="login-form">
+      <div class="form-group"><label>E-mail</label><input type="email" id="login-email" placeholder="din@email.dk"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="login-password" placeholder="••••••••"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="handleLogin()">Log ind</button>
+    </div>
+    <div id="register-form" class="hidden">
+      <div class="form-group"><label>Brugernavn</label><input type="text" id="reg-username" placeholder="DitBrugernavn"></div>
+      <div class="form-group"><label>E-mail</label><input type="email" id="reg-email" placeholder="din@email.dk"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="reg-password" placeholder="Min. 6 tegn"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="handleRegister()">Opret konto</button>
+    </div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app" class="hidden">
+  <!-- Topbar -->
+  <header class="app-topbar">
+    <div class="app-logo" onclick="showPage('dashboard')">
+      <div class="app-logo-mark">D</div>
+      <div class="app-logo-text">Draft<span>ly</span></div>
+    </div>
+    <div class="app-topbar-right">
+      <div class="app-chip">Runde <span class="v" id="app-round">3 / 14</span></div>
+      <div class="app-avatar" id="app-avatar" onclick="handleSignOut()" title="Log ud">?</div>
+    </div>
+  </header>
+
+  <!-- Main scrollable area -->
+  <div class="main">
+    <div class="app-inner">
+
+    <!-- OVERBLIK -->
+    <div id="page-dashboard" class="page active">
+      <!-- Header -->
+      <div class="dash-team-header">
+        <div>
+          <div class="dash-team-name" id="dash-team-name">Mit Hold</div>
+          <div class="dash-team-sub">Sæson 2025/26 · Superliga Manager</div>
+          <div class="dash-deadline-tag">
+            <div class="live-dot"></div>
+            Næste deadline: 1. marts kl. 19:30
+          </div>
+        </div>
+      </div>
+
+      <!-- Tiles -->
+      <div class="dash-tiles">
+        <div class="dash-tile dt-blue" onclick="showPage('mit-hold')">
+          <div class="dash-tile-ico"><svg viewBox="0 0 44 44" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><path d="M22 6L28 16L40 18L31 27L33 40L22 34L11 40L13 27L4 18L16 16Z"/></svg></div>
+          <div class="dash-tile-lbl">Mine Hold</div>
+          <div class="dash-tile-sub">Opstilling</div>
+        </div>
+        <div class="dash-tile dt-teal" onclick="showPage('byg-hold')">
+          <div class="dash-tile-ico"><svg viewBox="0 0 44 44" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><circle cx="22" cy="22" r="15"/><line x1="22" y1="10" x2="22" y2="34"/><line x1="10" y1="22" x2="34" y2="22"/></svg></div>
+          <div class="dash-tile-lbl">Byg Hold</div>
+          <div class="dash-tile-sub">Vælg spillere</div>
+        </div>
+        <div class="dash-tile dt-purple" onclick="showPage('rangliste')">
+          <div class="dash-tile-ico"><svg viewBox="0 0 44 44" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><path d="M8 34L17 22L24 28L32 17L38 24"/><circle cx="8" cy="34" r="2" fill="white" stroke="none"/><circle cx="38" cy="24" r="2" fill="white" stroke="none"/></svg></div>
+          <div class="dash-tile-lbl">Rangliste</div>
+          <div class="dash-tile-sub">Top spillere</div>
+        </div>
+        <div class="dash-tile dt-pink" onclick="showPage('statistik')">
+          <div class="dash-tile-ico"><svg viewBox="0 0 44 44" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><rect x="6" y="28" width="8" height="10" rx="2"/><rect x="18" y="18" width="8" height="20" rx="2"/><rect x="30" y="10" width="8" height="28" rx="2"/></svg></div>
+          <div class="dash-tile-lbl">Statistik</div>
+          <div class="dash-tile-sub">Spilleroverblik</div>
+        </div>
+        <div class="dash-tile dt-orange" onclick="showPage('ligaer')">
+          <div class="dash-tile-ico"><svg viewBox="0 0 44 44" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="11" r="4"/><path d="M40 21v-2a4 4 0 0 0-3-3.87M28 3.13a4 4 0 0 1 0 7.75"/><path d="M26 21v-2a4 4 0 0 0-4-4h-6a4 4 0 0 0-4 4v2" stroke="none"/></svg></div>
+          <div class="dash-tile-lbl">Miniligaer</div>
+          <div class="dash-tile-sub">Venner</div>
+        </div>
+      </div>
+
+      <!-- Main grid: pitch + stats -->
+      <div class="dash-main-grid">
+        <!-- Pitch -->
+        <div class="dash-pitch-card">
+          <div class="dash-card-hdr">
+            <div class="dash-card-title">⚽ Min Opstilling</div>
+            <span style="font-size:11px;color:var(--text-muted);" id="dash-formation-label">4-2-3-1</span>
+          </div>
+          <div class="dash-pitch">
+            <svg class="field" viewBox="0 0 500 580" preserveAspectRatio="xMidYMid slice">
+              <defs><pattern id="dpf" x="0" y="0" width="500" height="72" patternUnits="userSpaceOnUse"><rect width="500" height="36" fill="rgba(22,90,50,0.55)"/><rect y="36" width="500" height="36" fill="rgba(16,72,40,0.55)"/></pattern></defs>
+              <rect width="500" height="580" fill="url(#dpf)"/>
+              <rect x="18" y="14" width="464" height="552" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" rx="2"/>
+              <line x1="18" y1="290" x2="482" y2="290" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+              <circle cx="250" cy="290" r="58" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.5"/>
+              <circle cx="250" cy="290" r="4" fill="rgba(255,255,255,0.32)"/>
+              <rect x="118" y="14" width="264" height="96" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+              <rect x="178" y="14" width="144" height="40" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+              <rect x="198" y="5" width="104" height="12" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
+              <rect x="118" y="470" width="264" height="96" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+              <rect x="178" y="526" width="144" height="40" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+              <rect x="198" y="563" width="104" height="12" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
+            </svg>
+            <div id="dash-pitch-players"></div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div class="dash-right-col">
+          <!-- Rank card -->
+          <div class="dash-glass-card">
+            <div class="dash-gc-title">Din Placering</div>
+            <div class="dash-rank-big">
+              <div class="dash-rank-num" id="dash-rank-big">—</div>
+              <div class="dash-rank-sub" id="dash-rank-sub">Ingen rangering endnu</div>
+            </div>
+            <div class="dash-stat-rows">
+              <div class="dash-sr"><span class="dash-sr-l">Total point</span><span class="dash-sr-v" id="dash-total-pts">0 pt.</span></div>
+              <div class="dash-sr"><span class="dash-sr-l">Holdværdi</span><span class="dash-sr-v gold" id="dash-holdval">0M</span></div>
+              <div class="dash-sr"><span class="dash-sr-l">Budget tilbage</span><span class="dash-sr-v up" id="dash-budget-left">50M</span></div>
+            </div>
+          </div>
+          <!-- Kommende kampe card -->
+          <div class="dash-glass-card">
+            <div class="dash-gc-title">Kommende Kampe</div>
+            <div class="dash-kamp-list" id="dash-kamp-list">
+              <div class="dash-kamp-row">
+                <span class="dash-kamp-n">FCK vs FCM</span>
+                <span class="dash-kamp-t">Søn 15:00</span>
+              </div>
+              <div class="dash-kamp-row">
+                <span class="dash-kamp-n">OB vs Viborg</span>
+                <span class="dash-kamp-t">Søn 17:00</span>
+              </div>
+              <div class="dash-kamp-row">
+                <span class="dash-kamp-n">Silkeborg vs AaB</span>
+                <span class="dash-kamp-t live">LIVE</span>
+              </div>
+              <div class="dash-kamp-row">
+                <span class="dash-kamp-n">BIF vs AGF</span>
+                <span class="dash-kamp-t">Søn 19:00</span>
+              </div>
+              <div class="dash-kamp-row">
+                <span class="dash-kamp-n">RFC vs SIF</span>
+                <span class="dash-kamp-t">Man 18:00</span>
+              </div>
+            </div>
+          </div>
+          <div class="dash-glass-card">
+            <div class="dash-gc-title">Miniligaer</div>
+            <div class="dash-mini-liga" id="dash-mini-liga-list">
+              <div style="font-size:13px;color:var(--text-muted);text-align:center;padding:12px 0;">Ingen miniligaer endnu.<br><a onclick="showPage('ligaer')" style="color:var(--blue);cursor:pointer;">Opret eller tilmeld dig →</a></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- MINE HOLD                             -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="page-mit-hold" class="page">
+      <div class="ph-row">
+        <div>
+          <div class="page-title">Mine Hold</div>
+          <div class="page-sub">Dine hold i den generelle turnering · Sæson 2025/26</div>
+        </div>
+        <button class="btn btn-primary" onclick="showPage('byg-hold')">➕ Opret nyt hold</button>
+      </div>
+      <div id="mine-hold-list"><div class="spinner"></div></div>
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- BYG HOLD                              -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="page-byg-hold" class="page">
+      <div class="ph-row">
+        <div>
+          <div class="page-title">Byg Hold</div>
+          <div class="page-sub">Klik en position på banen, vælg derefter spiller</div>
+        </div>
+        <button class="btn btn-primary" onclick="saveTeam()">💾 Gem Hold</button>
+      </div>
+
+      <!-- Budget header bar -->
+      <div class="byg-budget-bar glass-md">
+        <div class="byg-budget-item">
+          <span class="byg-budget-lbl">Samlet budget</span>
+          <span class="byg-budget-val">50,0M kr.</span>
+        </div>
+        <div class="byg-budget-divider"></div>
+        <div class="byg-budget-item">
+          <span class="byg-budget-lbl">Brugt</span>
+          <span class="byg-budget-val red" id="tb-spent">0,0M kr.</span>
+        </div>
+        <div class="byg-budget-divider"></div>
+        <div class="byg-budget-item">
+          <span class="byg-budget-lbl">Tilbage at handle for</span>
+          <span class="byg-budget-val teal" id="tb-budget-left">50,0M kr.</span>
+        </div>
+        <div style="flex:1;"></div>
+        <div class="byg-budget-progress-wrap">
+          <div class="byg-budget-progress-fill" id="tb-budget-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="byg-layout">
+        <!-- Left: pitch + formation -->
+        <div class="dash-pitch-card">
+          <div class="dash-card-hdr">
+            <div class="dash-card-title">⚽ Opstilling</div>
+            <!-- Formation dropdown trigger -->
+            <div class="form-dropdown-wrap" id="form-dropdown-wrap">
+              <button class="form-dropdown-btn" id="form-dropdown-btn" onclick="toggleFormDropdown()">
+                <span id="form-dropdown-label">4-2-3-1</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="form-dropdown-panel hidden" id="form-dropdown-panel">
+                <div class="form-dropdown-grid" id="form-dropdown-grid"></div>
+              </div>
+            </div>
+          </div>
+          <div class="dash-pitch" id="tb-pitch">
+            <svg class="field" viewBox="0 0 500 580" preserveAspectRatio="xMidYMid slice">
+              <defs><pattern id="sf2" x="0" y="0" width="500" height="72" patternUnits="userSpaceOnUse"><rect width="500" height="36" fill="rgba(22,90,50,0.55)"/><rect y="36" width="500" height="36" fill="rgba(16,72,40,0.55)"/></pattern></defs>
+              <rect width="500" height="580" fill="url(#sf2)"/>
+              <rect x="18" y="14" width="464" height="552" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" rx="2"/>
+              <line x1="18" y1="290" x2="482" y2="290" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+              <circle cx="250" cy="290" r="58" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1.5"/>
+              <circle cx="250" cy="290" r="4" fill="rgba(255,255,255,0.32)"/>
+              <rect x="118" y="14" width="264" height="96" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+              <rect x="178" y="14" width="144" height="40" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+              <rect x="198" y="5" width="104" height="12" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
+              <rect x="118" y="470" width="264" height="96" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+              <rect x="178" y="526" width="144" height="40" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+              <rect x="198" y="563" width="104" height="12" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
+            </svg>
+            <div id="tb-slots"></div>
+          </div>
+        </div>
+        <!-- Right: player pool -->
+        <div class="dash-pitch-card" style="padding:14px;">
+          <div id="pool-hint" class="slot-hint">Klik en position på banen for at vælge spiller</div>
+          <div class="pool-header">
+            <input class="pool-search" id="pool-search" placeholder="Søg spiller..." oninput="renderPool()">
+            <div class="pos-btns">
+              <button class="pos-btn active" data-pos="ALL" onclick="setPosFilter('ALL',this)">Alle</button>
+              <button class="pos-btn" data-pos="GK"  onclick="setPosFilter('GK',this)"  style="color:var(--gold)">Keeper</button>
+              <button class="pos-btn" data-pos="DEF" onclick="setPosFilter('DEF',this)" style="color:var(--teal)">Forsvar</button>
+              <button class="pos-btn" data-pos="MID" onclick="setPosFilter('MID',this)" style="color:var(--blue)">Midtbane</button>
+              <button class="pos-btn" data-pos="ATT" onclick="setPosFilter('ATT',this)" style="color:#fb7185">Angreb</button>
+            </div>
+          </div>
+          <div class="pool-list" id="pool-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- RANGLISTE                             -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="page-rangliste" class="page">
+      <div class="ph-row">
+        <div>
+          <div class="page-title">Rangliste</div>
+          <div class="page-sub">Generel stilling for alle spillere · Sæson 2025/26</div>
+        </div>
+        <div class="rank-my-pos glass-md" id="rank-my-badge" style="display:none;">
+          <span style="font-size:11px;color:var(--text-muted);font-weight:600;">DIN PLACERING</span>
+          <span class="rank-my-num" id="rank-my-num">—</span>
+        </div>
+      </div>
+      <div class="dash-pitch-card" style="padding:0;overflow:hidden;">
+        <div class="lb-header">
+          <span class="lb-hcol" style="width:48px;text-align:center;">#</span>
+          <span class="lb-hcol" style="flex:1;">Spiller / Hold</span>
+          <span class="lb-hcol" style="width:90px;text-align:right;">Holdværdi</span>
+          <span class="lb-hcol" style="width:80px;text-align:right;">Point</span>
+        </div>
+        <div id="leaderboard-list"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- STATISTIK                             -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="page-statistik" class="page">
+      <div class="ph-row">
+        <div>
+          <div class="page-title">Statistik</div>
+          <div class="page-sub">Alle Superliga-spillere · Sæson 2025/26</div>
+        </div>
+      </div>
+      <!-- Filters -->
+      <div class="dash-pitch-card" style="padding:14px 18px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <input class="pool-search" id="stat-search" placeholder="Søg spiller eller klub..." oninput="renderStatistik()" style="max-width:260px;">
+          <div class="pos-btns">
+            <button class="pos-btn active" onclick="setStatFilter('ALL',this)">Alle</button>
+            <button class="pos-btn" onclick="setStatFilter('GK',this)"  style="color:var(--gold)">Keeper</button>
+            <button class="pos-btn" onclick="setStatFilter('DEF',this)" style="color:var(--teal)">Forsvar</button>
+            <button class="pos-btn" onclick="setStatFilter('MID',this)" style="color:var(--blue)">Midtbane</button>
+            <button class="pos-btn" onclick="setStatFilter('ATT',this)" style="color:#fb7185">Angreb</button>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);">
+            Sortér efter:
+            <select id="stat-sort" onchange="renderStatistik()" style="background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:5px 10px;font-size:12px;font-family:var(--font-body);">
+              <option value="total_points">Point</option>
+              <option value="price">Pris</option>
+              <option value="name">Navn</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="dash-pitch-card" style="padding:0;overflow:hidden;">
+        <div class="lb-header">
+          <span class="lb-hcol" style="width:44px;"></span>
+          <span class="lb-hcol" style="flex:1;">Spiller</span>
+          <span class="lb-hcol" style="width:70px;text-align:center;">Klub</span>
+          <span class="lb-hcol" style="width:70px;text-align:center;">Pos.</span>
+          <span class="lb-hcol" style="width:90px;text-align:right;">Pris</span>
+          <span class="lb-hcol" style="width:80px;text-align:right;">Point</span>
+        </div>
+        <div id="statistik-list"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- LIGAER                                -->
+    <!-- ══════════════════════════════════════ -->
+    <div id="page-ligaer" class="page">
+      <div class="ph-row">
+        <div>
+          <div class="page-title">Miniligaer</div>
+          <div class="page-sub">Spil mod dine venner og kollegaer</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" onclick="showCreateLeague()">➕ Opret liga</button>
+          <button class="btn btn-ghost" onclick="showJoinLeague()">🔗 Tilmeld med kode</button>
+        </div>
+      </div>
+
+      <!-- Create/Join forms -->
+      <div id="create-league-form" class="dash-pitch-card hidden" style="padding:20px;">
+        <div class="dash-card-title" style="margin-bottom:14px;">Opret ny miniliga</div>
+        <div class="form-group"><label>Liganavn</label><input type="text" id="league-name-input" placeholder="f.eks. Arbejdspladsen 2025"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" onclick="createLeague()">Opret liga</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('create-league-form').classList.add('hidden')">Annuller</button>
+        </div>
+      </div>
+      <div id="join-league-form" class="dash-pitch-card hidden" style="padding:20px;">
+        <div class="dash-card-title" style="margin-bottom:14px;">Tilmeld med invitationskode</div>
+        <div class="form-group"><label>Kode</label><input type="text" id="join-code-input" placeholder="ABC123" style="text-transform:uppercase;letter-spacing:2px;max-width:200px;"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" onclick="joinLeague()">Tilmeld</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('join-league-form').classList.add('hidden')">Annuller</button>
+        </div>
+      </div>
+
+      <!-- Leagues list -->
+      <div id="leagues-list"><div class="spinner"></div></div>
+    </div>
+
+  </div><!-- end app-inner -->
+  </div><!-- end main -->
+
+  <!-- Dock Navigation -->
+  <nav class="app-bottomnav" id="app-bottomnav">
+
+    <button class="bn-item active" id="bn-dashboard" onclick="showPage('dashboard')">
+      <div class="bn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <span class="bn-lbl">Overblik</span>
+    </button>
+
+    <button class="bn-item" id="bn-mit-hold" onclick="showPage('mit-hold')">
+      <div class="bn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <span class="bn-lbl">Mine Hold</span>
+    </button>
+
+    <button class="bn-item bn-center" id="bn-byg-hold" onclick="showPage('byg-hold')">
+      <div class="bn-center-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
+      <span class="bn-lbl">Byg Hold</span>
+    </button>
+
+    <button class="bn-item" id="bn-rangliste" onclick="showPage('rangliste')">
+      <div class="bn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+      <span class="bn-lbl">Rangliste</span>
+    </button>
+
+    <!-- Divider — visible on desktop, hidden on mobile -->
+    <div class="bn-divider"></div>
+
+    <button class="bn-item" id="bn-statistik" onclick="showPage('statistik')">
+      <div class="bn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="16" width="4" height="6" rx="1"/><rect x="9" y="10" width="4" height="12" rx="1"/><rect x="16" y="4" width="4" height="18" rx="1"/></svg></div>
+      <span class="bn-lbl">Statistik</span>
+    </button>
+
+    <button class="bn-item" id="bn-ligaer" onclick="showPage('ligaer')">
+      <div class="bn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></div>
+      <span class="bn-lbl">Miniligaer</span>
+    </button>
+
+    <!-- "Mere" — only visible on mobile (CSS hides on desktop) -->
+    <button class="bn-item bn-more-btn" id="bn-more" onclick="toggleMoreMenu()">
+      <div class="bn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="19" cy="12" r="1" fill="currentColor"/></svg></div>
+      <span class="bn-lbl">Mere</span>
+    </button>
+
+  </nav>
+
+  <!-- More menu popup (mobile only) -->
+  <div class="bn-more-overlay hidden" id="bn-more-overlay" onclick="closeMoreMenu()"></div>
+  <div class="bn-more-panel hidden" id="bn-more-panel">
+    <div class="bn-more-header">Navigér til</div>
+    <button class="bn-more-item" onclick="showPage('statistik');closeMoreMenu()">
+      <div class="bn-more-icon" style="background:rgba(236,72,153,0.15);color:#f472b6;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="16" width="4" height="6" rx="1"/><rect x="9" y="10" width="4" height="12" rx="1"/><rect x="16" y="4" width="4" height="18" rx="1"/></svg>
+      </div>
+      <div><div class="bn-more-lbl">Statistik</div><div class="bn-more-sub">Alle Superliga-spillere</div></div>
+      <svg class="bn-more-arrow" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <button class="bn-more-item" onclick="showPage('ligaer');closeMoreMenu()">
+      <div class="bn-more-icon" style="background:rgba(249,115,22,0.15);color:#fb923c;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      </div>
+      <div><div class="bn-more-lbl">Miniligaer</div><div class="bn-more-sub">Spil mod dine venner</div></div>
+      <svg class="bn-more-arrow" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <div class="bn-more-divider"></div>
+    <button class="bn-more-item" onclick="handleSignOut();closeMoreMenu()">
+      <div class="bn-more-icon" style="background:rgba(239,68,68,0.12);color:#f87171;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </div>
+      <div><div class="bn-more-lbl" style="color:#f87171;">Log ud</div><div class="bn-more-sub" id="bn-username-display">—</div></div>
+    </button>
+  </div>
+
+</div><!-- end app -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+const SUPABASE_URL = 'https://sxwpmgkfgdgtscupslcw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_OKuhz4cIyd6R9GWjqkqbdg_YtbPLTvc';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const BUDGET = 50_000_000;
+const PC = { ATT:'#fb7185', MID:'#5ab4ff', DEF:'#3dddc8', GK:'#fbbf24' };
+const BC = {
+  FCK:['#f5f5f5','#111'], FCM:['#cc0e1e','#fff'], FCN:['#e8171f','#fff'],
+  BIF:['#f6d000','#003a8c'], AGF:['#1a3d8f','#fff'], OB:['#0047b0','#fff'],
+  RFC:['#8b0000','#fff'], SIF:['#0052b0','#fff'], VFF:['#006b3c','#fff'],
+  VB:['#d40000','#fff'], SF:['#e00020','#fff'], FCF:['#004daa','#fff']
+};
+// Position display labels (internal key → dansk)
+const POS_LABELS = { GK:'Keeper', DEF:'Forsvar', MID:'Midtbane', ATT:'Angreb' };
+
+const FORMS = {
+  '343': [
+    {pos:'ATT',lbl:'LW', l:'22%',t:'20%'},{pos:'ATT',lbl:'ST', l:'50%',t:'20%'},{pos:'ATT',lbl:'RW', l:'78%',t:'20%'},
+    {pos:'MID',lbl:'LM', l:'12%',t:'46%'},{pos:'MID',lbl:'CM', l:'37%',t:'46%'},{pos:'MID',lbl:'CM', l:'63%',t:'46%'},{pos:'MID',lbl:'RM', l:'88%',t:'46%'},
+    {pos:'DEF',lbl:'CB', l:'22%',t:'65%'},{pos:'DEF',lbl:'CB', l:'50%',t:'65%'},{pos:'DEF',lbl:'CB', l:'78%',t:'65%'},
+    {pos:'GK', lbl:'K',  l:'50%',t:'83%'},
+  ],
+  '352': [
+    {pos:'ATT',lbl:'ST', l:'34%',t:'20%'},{pos:'ATT',lbl:'ST', l:'66%',t:'20%'},
+    {pos:'MID',lbl:'LM', l:'9%', t:'46%'},{pos:'MID',lbl:'CM', l:'27%',t:'46%'},{pos:'MID',lbl:'CM', l:'50%',t:'46%'},{pos:'MID',lbl:'CM', l:'73%',t:'46%'},{pos:'MID',lbl:'RM', l:'91%',t:'46%'},
+    {pos:'DEF',lbl:'CB', l:'22%',t:'65%'},{pos:'DEF',lbl:'CB', l:'50%',t:'65%'},{pos:'DEF',lbl:'CB', l:'78%',t:'65%'},
+    {pos:'GK', lbl:'K',  l:'50%',t:'83%'},
+  ],
+  '433': [
+    {pos:'ATT',lbl:'LW', l:'22%',t:'20%'},{pos:'ATT',lbl:'ST', l:'50%',t:'20%'},{pos:'ATT',lbl:'RW', l:'78%',t:'20%'},
+    {pos:'MID',lbl:'CM', l:'22%',t:'46%'},{pos:'MID',lbl:'CM', l:'50%',t:'46%'},{pos:'MID',lbl:'CM', l:'78%',t:'46%'},
+    {pos:'DEF',lbl:'LB', l:'9%', t:'65%'},{pos:'DEF',lbl:'CB', l:'32%',t:'65%'},{pos:'DEF',lbl:'CB', l:'68%',t:'65%'},{pos:'DEF',lbl:'RB', l:'91%',t:'65%'},
+    {pos:'GK', lbl:'K',  l:'50%',t:'83%'},
+  ],
+  '442': [
+    {pos:'ATT',lbl:'ST', l:'34%',t:'20%'},{pos:'ATT',lbl:'ST', l:'66%',t:'20%'},
+    {pos:'MID',lbl:'LM', l:'9%', t:'46%'},{pos:'MID',lbl:'CM', l:'34%',t:'46%'},{pos:'MID',lbl:'CM', l:'66%',t:'46%'},{pos:'MID',lbl:'RM', l:'91%',t:'46%'},
+    {pos:'DEF',lbl:'LB', l:'9%', t:'65%'},{pos:'DEF',lbl:'CB', l:'32%',t:'65%'},{pos:'DEF',lbl:'CB', l:'68%',t:'65%'},{pos:'DEF',lbl:'RB', l:'91%',t:'65%'},
+    {pos:'GK', lbl:'K',  l:'50%',t:'83%'},
+  ],
+  '4231': [
+    {pos:'ATT',lbl:'ST', l:'50%',t:'20%'},
+    {pos:'MID',lbl:'CAM',l:'22%',t:'34%'},{pos:'MID',lbl:'CAM',l:'50%',t:'34%'},{pos:'MID',lbl:'CAM',l:'78%',t:'34%'},
+    {pos:'MID',lbl:'CDM',l:'34%',t:'46%'},{pos:'MID',lbl:'CDM',l:'66%',t:'46%'},
+    {pos:'DEF',lbl:'LB', l:'9%', t:'65%'},{pos:'DEF',lbl:'CB', l:'32%',t:'65%'},{pos:'DEF',lbl:'CB', l:'68%',t:'65%'},{pos:'DEF',lbl:'RB', l:'91%',t:'65%'},
+    {pos:'GK', lbl:'K',  l:'50%',t:'83%'},
+  ],
+  '451': [
+    {pos:'ATT',lbl:'ST', l:'50%',t:'20%'},
+    {pos:'MID',lbl:'LM', l:'9%', t:'46%'},{pos:'MID',lbl:'CM', l:'27%',t:'46%'},{pos:'MID',lbl:'CM', l:'50%',t:'46%'},{pos:'MID',lbl:'CM', l:'73%',t:'46%'},{pos:'MID',lbl:'RM', l:'91%',t:'46%'},
+    {pos:'DEF',lbl:'LB', l:'9%', t:'65%'},{pos:'DEF',lbl:'CB', l:'32%',t:'65%'},{pos:'DEF',lbl:'CB', l:'68%',t:'65%'},{pos:'DEF',lbl:'RB', l:'91%',t:'65%'},
+    {pos:'GK', lbl:'K',  l:'50%',t:'83%'},
+  ],
+  '532': [
+    {pos:'ATT',lbl:'ST', l:'34%',t:'20%'},{pos:'ATT',lbl:'ST', l:'66%',t:'20%'},
+    {pos:'MID',lbl:'CM', l:'22%',t:'46%'},{pos:'MID',lbl:'CM', l:'50%',t:'46%'},{pos:'MID',lbl:'CM', l:'78%',t:'46%'},
+    {pos:'DEF',lbl:'LB', l:'9%', t:'65%'},{pos:'DEF',lbl:'CB', l:'27%',t:'65%'},{pos:'DEF',lbl:'CB', l:'50%',t:'65%'},{pos:'DEF',lbl:'CB', l:'73%',t:'65%'},{pos:'DEF',lbl:'RB', l:'91%',t:'65%'},
+    {pos:'GK', lbl:'K',  l:'50%',t:'83%'},
+  ],
+  '541': [
+    {pos:'ATT',lbl:'ST', l:'50%',t:'20%'},
+    {pos:'MID',lbl:'LM', l:'12%',t:'46%'},{pos:'MID',lbl:'CM', l:'37%',t:'46%'},{pos:'MID',lbl:'CM', l:'63%',t:'46%'},{pos:'MID',lbl:'RM', l:'88%',t:'46%'},
+    {pos:'DEF',lbl:'LB', l:'9%', t:'65%'},{pos:'DEF',lbl:'CB', l:'27%',t:'65%'},{pos:'DEF',lbl:'CB', l:'50%',t:'65%'},{pos:'DEF',lbl:'CB', l:'73%',t:'65%'},{pos:'DEF',lbl:'RB', l:'91%',t:'65%'},
+    {pos:'GK', lbl:'K',  l:'50%',t:'83%'},
+  ],
+};
+
+// Formation display names
+const FORM_NAMES = {
+  '343':'3-4-3','352':'3-5-2','433':'4-3-3','442':'4-4-2',
+  '4231':'4-2-3-1','451':'4-5-1','532':'5-3-2','541':'5-4-1'
+};
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let currentUser = null;
+let currentProfile = null;
+let currentTeam = null;
+let allPlayers = [];
+let allTeamsCache = [];
+let tbTeam = new Array(11).fill(null);
+let tbFormation = '4231';
+let selSlot = null;
+let posFilter = 'ALL';
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+async function init() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    await onLogin(session.user);
+  } else {
+    showLanding();
+  }
+
+  db.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      closeModal();
+      await onLogin(session.user);
+    } else if (event === 'SIGNED_OUT') {
+      showLanding();
+    }
+  });
+}
+
+function showLanding() {
+  document.getElementById('loading-screen').classList.add('hidden');
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('landing').classList.remove('hidden');
+}
+
+function openModal(tab) {
+  document.getElementById('auth-modal').classList.add('open');
+  switchTab(tab || 'login');
+}
+
+function closeModal() {
+  document.getElementById('auth-modal').classList.remove('open');
+}
+
+function closeModalIfBg(e) {
+  if (e.target === document.getElementById('auth-modal')) closeModal();
+}
+
+async function onLogin(user) {
+  currentUser = user;
+  document.getElementById('landing').classList.add('hidden');
+  await loadProfile();
+  await loadPlayers();
+  await loadTeam();
+  showApp();
+}
+
+function showApp() {
+  document.getElementById('loading-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  updateSidebar();
+  renderDashboard();
+  renderBygHold();
+}
+
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
+  document.getElementById('login-form').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('register-form').classList.toggle('hidden', tab !== 'register');
+  document.getElementById('auth-message').innerHTML = '';
+}
+
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) return showAuthMsg('Udfyld alle felter', 'error');
+  const { error } = await db.auth.signInWithPassword({ email, password });
+  if (error) showAuthMsg(error.message, 'error');
+}
+
+async function handleRegister() {
+  const username = document.getElementById('reg-username').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  if (!username || !email || !password) return showAuthMsg('Udfyld alle felter', 'error');
+  if (password.length < 6) return showAuthMsg('Password skal være mindst 6 tegn', 'error');
+
+  const { data, error } = await db.auth.signUp({ email, password });
+  if (error) return showAuthMsg(error.message, 'error');
+
+  if (data.user) {
+    await db.from('profiles').insert({ id: data.user.id, username, full_name: username });
+    showAuthMsg('Konto oprettet! Tjek din e-mail for bekræftelse.', 'success');
+  }
+}
+
+async function handleSignOut() {
+  await db.auth.signOut();
+}
+
+function showAuthMsg(msg, type) {
+  document.getElementById('auth-message').innerHTML = `<div class="auth-${type}">${msg}</div>`;
+}
+
+// ═══════════════════════════════════════════
+// DATA LOADING
+// ═══════════════════════════════════════════
+async function loadProfile() {
+  const { data } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
+  currentProfile = data;
+}
+
+async function loadPlayers() {
+  const { data } = await db.from('players').select('*').eq('active', true).order('total_points', { ascending: false });
+  allPlayers = data || [];
+}
+
+async function loadTeam() {
+  const { data } = await db.from('teams')
+    .select('*, team_players(*, players(*))')
+    .eq('user_id', currentUser.id)
+    .single();
+
+  if (data) {
+    currentTeam = data;
+    tbFormation = data.formation || '4231';
+    // Populate tbTeam from DB
+    tbTeam = new Array(11).fill(null);
+    if (data.team_players) {
+      data.team_players.forEach(tp => {
+        if (tp.slot_index >= 0 && tp.slot_index < 11) {
+          tbTeam[tp.slot_index] = { ...tp.players, is_captain: tp.is_captain };
+        }
+      });
+    }
+  } else {
+    currentTeam = null;
+    tbTeam = new Array(11).fill(null);
+  }
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+
+// Pages that have a direct bottom nav button
+const BN_MAP = {
+  'dashboard': 'bn-dashboard',
+  'mit-hold':  'bn-mit-hold',
+  'byg-hold':  'bn-byg-hold',
+  'rangliste': 'bn-rangliste',
+  'statistik': 'bn-statistik',
+  'ligaer':    'bn-ligaer',
+};
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+
+  // Sync bottom nav
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
+  const activeBn = document.getElementById(BN_MAP[id]);
+  if (activeBn) activeBn.classList.add('active');
+
+  if (id === 'rangliste')  loadLeaderboard();
+  if (id === 'ligaer')     loadLeagues();
+  if (id === 'mit-hold')   loadMineHold();
+  if (id === 'byg-hold')   renderBygHold();
+  if (id === 'statistik')  renderStatistik();
+
+  // Close more menu if open
+  closeMoreMenu();
+
+  // Scroll to top
+  document.querySelector('.main')?.scrollTo(0, 0);
+}
+
+function toggleMoreMenu() {
+  const panel  = document.getElementById('bn-more-panel');
+  const overlay = document.getElementById('bn-more-overlay');
+  const isOpen = !panel.classList.contains('hidden');
+  if (isOpen) {
+    closeMoreMenu();
+  } else {
+    panel.classList.remove('hidden');
+    overlay.classList.remove('hidden');
+    document.getElementById('bn-more').classList.add('active');
+  }
+}
+
+function closeMoreMenu() {
+  document.getElementById('bn-more-panel')?.classList.add('hidden');
+  document.getElementById('bn-more-overlay')?.classList.add('hidden');
+  document.getElementById('bn-more')?.classList.remove('active');
+}
+
+function updateSidebar() {
+  const name = currentProfile?.username || currentUser?.email?.split('@')[0] || '?';
+  const el = document.getElementById('app-avatar');
+  if (el) { el.textContent = name[0].toUpperCase(); el.title = name + ' — klik for at logge ud'; }
+  const usernameDisplay = document.getElementById('bn-username-display');
+  if (usernameDisplay) usernameDisplay.textContent = name;
+}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+function renderDashboard() {
+  const totalPts = currentTeam?.total_points || 0;
+  const val = tbTeam.reduce((s,p) => s + (p ? p.price*1e6 : 0), 0);
+  const budget = currentTeam?.budget_remaining ?? BUDGET;
+  const username = currentProfile?.username || 'Spiller';
+
+  const nameEl = document.getElementById('dash-team-name');
+  if (nameEl) nameEl.textContent = username + 's Hold';
+  const formEl = document.getElementById('dash-formation-label');
+  if (formEl) formEl.textContent = FORM_NAMES[tbFormation] || tbFormation;
+  const totalPtsEl = document.getElementById('dash-total-pts');
+  if (totalPtsEl) totalPtsEl.textContent = totalPts + ' pt.';
+  const holdValEl = document.getElementById('dash-holdval');
+  if (holdValEl) holdValEl.textContent = (val/1e6).toFixed(1) + 'M';
+  const budgetLeftEl = document.getElementById('dash-budget-left');
+  if (budgetLeftEl) budgetLeftEl.textContent = (budget/1e6).toFixed(1) + 'M';
+
+  renderDashPitch();
+  renderDashMiniLiga();
+}
+
+function renderDashPitch() {
+  const slots = FORMS[tbFormation];
+  const container = document.getElementById('dash-pitch-players');
+  if (!container) return;
+  container.innerHTML = '';
+  slots.forEach((s, i) => {
+    const p = tbTeam[i];
+    const div = document.createElement('div');
+    div.className = 'dash-pd';
+    div.style.cssText = `position:absolute;left:${s.l};top:${s.t};transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;z-index:10;`;
+    if (p) {
+      const [bg,fg] = BC[p.club] || ['#444','#fff'];
+      div.innerHTML = `<div class="dash-p-badge" style="background:${bg};color:${fg};"><div class="dash-p-badge-abbr">${p.club}</div></div><div class="dash-pd-name">${p.name.split(' ').pop()}</div>`;
+    } else {
+      div.innerHTML = `<div class="dash-empty-badge" style="border-color:${PC[s.pos]}40;"><span style="font-size:9px;font-weight:700;color:${PC[s.pos]};opacity:.6;">${s.lbl}</span></div>`;
+    }
+    container.appendChild(div);
+  });
+}
+
+async function renderDashMiniLiga() {
+  const container = document.getElementById('dash-mini-liga-list');
+  if (!container) return;
+  const { data } = await db.from('league_members').select('*, leagues(*)').eq('user_id', currentUser.id).limit(2);
+  if (!data || data.length === 0) {
+    container.innerHTML = `<div style="font-size:13px;color:var(--text-muted);text-align:center;padding:12px 0;">Ingen miniligaer endnu.<br><a onclick="showPage('ligaer')" style="color:var(--blue);cursor:pointer;">Opret eller tilmeld dig →</a></div>`;
+    return;
+  }
+  container.innerHTML = data.map(m => `<div class="dash-ml-row me"><span class="dash-ml-rank">#—</span><span class="dash-ml-name">${m.leagues?.name || 'Liga'}</span><span class="dash-ml-pts">—</span></div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// MINE HOLD
+// ═══════════════════════════════════════════
+async function loadMineHold() {
+  const el = document.getElementById('mine-hold-list');
+  el.innerHTML = '<div class="spinner"></div>';
+
+  const { data: teams } = await db.from('teams')
+    .select('*, team_players(*, players(*))')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+
+  if (!teams || teams.length === 0) {
+    el.innerHTML = `<div class="dash-pitch-card" style="padding:40px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:16px;">⚽</div>
+      <div style="font-family:var(--font-display);font-size:22px;font-weight:800;margin-bottom:8px;">Ingen hold endnu</div>
+      <div style="color:var(--text-muted);font-size:14px;margin-bottom:20px;">Opret dit første hold og deltag i den generelle turnering</div>
+      <button class="btn btn-primary" onclick="showPage('byg-hold')">➕ Byg dit første hold</button>
+    </div>`;
+    return;
+  }
+
+  // Fetch rankings for these teams
+  const { data: allTeams } = await db.from('teams').select('id, total_points').order('total_points', { ascending: false });
+  const rankMap = {};
+  (allTeams || []).forEach((t, i) => { rankMap[t.id] = i + 1; });
+
+  const primaryId = currentProfile?.primary_team_id || teams[0]?.id;
+
+  el.innerHTML = `<div class="hold-cards">${teams.map(t => {
+    const isPrimary = t.id === primaryId;
+    const rank = rankMap[t.id] || '—';
+    const val = (t.team_players || []).reduce((s, tp) => s + (tp.players ? tp.players.price * 1e6 : 0), 0);
+    const valStr = (val / 1e6).toFixed(1) + 'M';
+    const pts = t.total_points || 0;
+    return `<div class="hold-card ${isPrimary ? 'primary' : ''}">
+      <div class="hold-card-top">
+        <div class="hold-card-name">${t.name || 'Unavngivet hold'}</div>
+        ${isPrimary ? '<span class="hold-primary-badge">⭐ Primært</span>' : ''}
+      </div>
+      <div class="hold-stats">
+        <div class="hold-stat">
+          <div class="hold-stat-lbl">Generel placering</div>
+          <div class="hold-stat-val rank">#${rank}</div>
+        </div>
+        <div class="hold-stat">
+          <div class="hold-stat-lbl">Holdværdi</div>
+          <div class="hold-stat-val value">${valStr}</div>
+        </div>
+        <div class="hold-stat">
+          <div class="hold-stat-lbl">Total point</div>
+          <div class="hold-stat-val">${pts}</div>
+        </div>
+        <div class="hold-stat">
+          <div class="hold-stat-lbl">Stigning sidst runde</div>
+          <div class="hold-stat-val ${pts > 0 ? 'up' : ''}">+0</div>
+        </div>
+      </div>
+      <div class="hold-card-actions">
+        <button class="btn btn-ghost btn-sm" onclick="editTeam('${t.id}')">✏️ Rediger hold</button>
+        ${!isPrimary ? `<button class="btn btn-primary btn-sm" onclick="setPrimaryTeam('${t.id}')">⭐ Sæt som primært</button>` : ''}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+async function setPrimaryTeam(teamId) {
+  await db.from('profiles').update({ primary_team_id: teamId }).eq('id', currentUser.id);
+  currentProfile.primary_team_id = teamId;
+  toast('Primært hold opdateret ✅', 'success');
+  loadMineHold();
+}
+
+function editTeam(teamId) {
+  // Load the team into builder and navigate
+  const team = allTeamsCache.find ? allTeamsCache.find(t => t.id === teamId) : null;
+  showPage('byg-hold');
+  toast('Hold indlæst i bygger', 'success');
+}
+
+// ═══════════════════════════════════════════
+// BYG HOLD
+// ═══════════════════════════════════════════
+function renderBygHold() {
+  updateFormDropdownLabel();
+  renderTbSlots();
+  renderPool();
+  updateTbBudget();
+}
+
+// How many DEF are currently placed
+function countDefInTeam() {
+  return tbTeam.filter(p => p && p.position === 'DEF').length;
+}
+
+// How many DEF does a formation require
+function formDefCount(fKey) {
+  return FORMS[fKey].filter(s => s.pos === 'DEF').length;
+}
+
+function toggleFormDropdown() {
+  const panel = document.getElementById('form-dropdown-panel');
+  const btn   = document.getElementById('form-dropdown-btn');
+  const isOpen = !panel.classList.contains('hidden');
+  if (isOpen) {
+    panel.classList.add('hidden');
+    btn.classList.remove('open');
+  } else {
+    buildFormDropdown();
+    panel.classList.remove('hidden');
+    btn.classList.add('open');
+  }
+}
+
+function buildFormDropdown() {
+  const grid = document.getElementById('form-dropdown-grid');
+  const placedDef = countDefInTeam();
+
+  // Row structure: [ATT counts top→bottom then DEF then GK]
+  // We'll render rows bottom-up: GK, DEF, MID, ATT
+  grid.innerHTML = Object.entries(FORMS).map(([key, slots]) => {
+    const defCount = formDefCount(key);
+    const isActive = key === tbFormation;
+    const isDisabled = placedDef > 0 && placedDef !== defCount;
+
+    // Build dot rows: count per position
+    const attCount = slots.filter(s => s.pos === 'ATT').length;
+    const midCount = slots.filter(s => s.pos === 'MID').length;
+    const defC     = slots.filter(s => s.pos === 'DEF').length;
+
+    const makeRow = (n, cls='') => `<div class="form-mini-row">${Array(n).fill(`<div class="form-mini-dot ${cls}"></div>`).join('')}</div>`;
+
+    const pitchDots = `
+      ${makeRow(attCount)}
+      ${midCount > 4 ? `${makeRow(Math.ceil(midCount/2))}${makeRow(Math.floor(midCount/2))}` : makeRow(midCount)}
+      ${makeRow(defC)}
+      ${makeRow(1,'gk')}`;
+
+    return `<div class="form-card ${isActive ? 'form-card-active' : ''} ${isDisabled ? 'form-card-disabled' : ''}"
+      onclick="${isDisabled ? '' : `chooseFormation('${key}')`}">
+      <div class="form-mini-pitch">${pitchDots}</div>
+      <div class="form-mini-name">${FORM_NAMES[key]}</div>
+      ${isDisabled ? `<div class="form-card-disabled-tag">${defC} fors.</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function chooseFormation(key) {
+  tbFormation = key;
+  // Clear slots that are incompatible positions
+  const newSlots = FORMS[key];
+  const newPosCounts = { GK:0, DEF:0, MID:0, ATT:0 };
+  newSlots.forEach(s => newPosCounts[s.pos]++);
+  // Keep players whose position still has a slot; remove excess
+  const kept = { GK:[], DEF:[], MID:[], ATT:[] };
+  tbTeam.forEach(p => { if (p) kept[p.position].push(p); });
+  tbTeam = newSlots.map(s => kept[s.pos].shift() || null);
+  selSlot = null;
+  // Close dropdown
+  document.getElementById('form-dropdown-panel').classList.add('hidden');
+  document.getElementById('form-dropdown-btn').classList.remove('open');
+  updateFormDropdownLabel();
+  renderTbSlots();
+  renderPool();
+  updateTbBudget();
+}
+
+function updateFormDropdownLabel() {
+  const lbl = document.getElementById('form-dropdown-label');
+  if (lbl) lbl.textContent = FORM_NAMES[tbFormation] || tbFormation;
+  // Also update dash formation label
+  const dashLbl = document.getElementById('dash-formation-label');
+  if (dashLbl) dashLbl.textContent = FORM_NAMES[tbFormation] || tbFormation;
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('form-dropdown-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('form-dropdown-panel')?.classList.add('hidden');
+    document.getElementById('form-dropdown-btn')?.classList.remove('open');
+  }
+});
+
+function setFormation(f) { chooseFormation(f); } // kept for compat
+
+function renderTbSlots() {
+  const slots = FORMS[tbFormation];
+  const container = document.getElementById('tb-slots');
+  container.innerHTML = '';
+  slots.forEach((s, i) => {
+    const p = tbTeam[i];
+    const div = document.createElement('div');
+    div.className = 'pd';
+    div.style.cssText = `left:${s.l};top:${s.t};`;
+    if (p) {
+      const [bg,fg] = BC[p.club] || ['#444','#fff'];
+      div.innerHTML = `<div class="p-badge" style="background:${bg};color:${fg};box-shadow:0 4px 16px rgba(0,0,0,.5);">
+        <div class="p-badge-abbr">${p.club}</div>
+        <div class="chip-cap" style="cursor:pointer;background:rgba(239,68,68,0.9);" onclick="event.stopPropagation();removePlayer(${i})">✕</div>
+      </div>
+      <div class="pd-name">${p.name.split(' ').pop()}</div>
+      <div class="pd-pts">${p.price.toFixed(1)}M</div>`;
+    } else {
+      const isSel = selSlot === i;
+      const plusIcon = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><line x1="8" y1="3" x2="8" y2="13" stroke="${isSel ? '#fff' : PC[s.pos]}" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="8" x2="13" y2="8" stroke="${isSel ? '#fff' : PC[s.pos]}" stroke-width="2" stroke-linecap="round"/></svg>`;
+      div.innerHTML = `<div class="p-badge" style="background:${isSel ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.07)'};border:2px dashed ${isSel ? 'rgba(99,160,255,0.9)' : PC[s.pos]+'55'};">${plusIcon}</div>
+        <div class="pd-name" style="color:${PC[s.pos]};background:transparent;border:none;opacity:${isSel ? '1' : '0.7'};">${POS_LABELS[s.pos]}</div>`;
+    }
+    div.onclick = () => clickSlot(i);
+    container.appendChild(div);
+  });
+}
+
+function clickSlot(i) {
+  // Toggle: click same slot again to deselect
+  if (selSlot === i) {
+    selSlot = null;
+    posFilter = 'ALL';
+    document.querySelectorAll('#page-byg-hold .pos-btns .pos-btn').forEach(b => b.classList.toggle('active', b.dataset.pos === 'ALL'));
+    const hint = document.getElementById('pool-hint');
+    hint.textContent = 'Klik en position på banen for at vælge spiller';
+    hint.classList.remove('selecting');
+    renderTbSlots();
+    renderPool();
+    return;
+  }
+  selSlot = i;
+  const pos = FORMS[tbFormation][i].pos;
+  posFilter = pos;
+  document.querySelectorAll('#page-byg-hold .pos-btns .pos-btn').forEach(b => b.classList.toggle('active', b.dataset.pos === pos));
+  const hint = document.getElementById('pool-hint');
+  hint.textContent = `Vælger ${FORMS[tbFormation][i].lbl} · Kun ${POS_LABELS[pos]}`;
+  hint.classList.add('selecting');
+  renderTbSlots();
+  renderPool();
+}
+
+function removePlayer(i) {
+  tbTeam[i] = null;
+  if (selSlot === i) selSlot = null;
+  renderTbSlots(); renderPool(); updateTbBudget();
+}
+
+function selectPlayer(id) {
+  if (selSlot === null) return toast('Klik først en position på banen', 'error');
+  const p = allPlayers.find(x => x.id === id);
+  if (!p) return;
+  if (p.position !== FORMS[tbFormation][selSlot].pos) return toast(`Denne position kræver en ${FORMS[tbFormation][selSlot].pos}`, 'error');
+  const used = tbTeam.reduce((s,x) => s + (x ? x.price*1e6 : 0), 0);
+  const has = tbTeam[selSlot] ? tbTeam[selSlot].price*1e6 : 0;
+  if (p.price*1e6 > BUDGET - used + has) return toast('Ikke nok budget', 'error');
+  tbTeam[selSlot] = p;
+  selSlot = null;
+  document.getElementById('pool-hint').textContent = 'Klik en position på banen for at vælge spiller';
+  document.getElementById('pool-hint').classList.remove('selecting');
+  posFilter = 'ALL';
+  document.querySelectorAll('#page-byg-hold .pos-btns .pos-btn').forEach(b => b.classList.toggle('active', b.dataset.pos === 'ALL'));
+  renderTbSlots(); renderPool(); updateTbBudget();
+}
+
+function setPosFilter(pos, btn) {
+  if (selSlot !== null) return;
+  posFilter = pos;
+  document.querySelectorAll('#page-byg-hold .pos-btns .pos-btn').forEach(b => b.classList.toggle('active', b.dataset.pos === pos));
+  renderPool();
+}
+
+function renderPool() {
+  const search = (document.getElementById('pool-search')?.value || '').toLowerCase();
+  const inTeam = new Set(tbTeam.filter(Boolean).map(p => p.id));
+  const used = tbTeam.reduce((s,x) => s + (x ? x.price*1e6 : 0), 0);
+  const budget = BUDGET - used + (selSlot !== null && tbTeam[selSlot] ? tbTeam[selSlot].price*1e6 : 0);
+  const requiredPos = selSlot !== null ? FORMS[tbFormation][selSlot].pos : null;
+  const list = document.getElementById('pool-list');
+  list.innerHTML = '';
+  allPlayers.forEach(p => {
+    if (requiredPos && p.position !== requiredPos) return;
+    if (!requiredPos && posFilter !== 'ALL' && p.position !== posFilter) return;
+    if (search && !p.name.toLowerCase().includes(search) && !p.club.toLowerCase().includes(search)) return;
+    const cantAfford = p.price*1e6 > budget;
+    const row = document.createElement('div');
+    row.className = 'pool-row' + (inTeam.has(p.id) ? ' in-team' : cantAfford ? ' cant-afford' : '');
+    const [bg,fg] = BC[p.club] || ['#444','#fff'];
+    row.innerHTML = `<div class="pr-badge" style="background:${bg};color:${fg};">${p.club}</div>
+      <div class="pr-info"><div class="pr-name">${p.name}</div><div class="pr-club">${p.club}</div></div>
+      <div class="pr-pos" style="color:${PC[p.position]}">${POS_LABELS[p.position]}</div>
+      <div style="text-align:right;"><div class="pr-price">${p.price.toFixed(1)}M</div><div class="pr-pts">${p.total_points}p</div></div>`;
+    row.onclick = () => selectPlayer(p.id);
+    list.appendChild(row);
+  });
+}
+
+function updateTbBudget() {
+  const used = tbTeam.reduce((s,p) => s + (p ? p.price*1e6 : 0), 0);
+  const left = BUDGET - used;
+  const pct = Math.min(100, (used/BUDGET)*100);
+  const fill = document.getElementById('tb-budget-fill');
+  if (fill) { fill.style.width = pct + '%'; fill.style.background = pct > 90 ? 'linear-gradient(90deg,#ef4444,#f97316)' : 'linear-gradient(90deg,var(--teal),var(--blue))'; }
+  const spentEl = document.getElementById('tb-spent');
+  if (spentEl) spentEl.textContent = (used/1e6).toFixed(1) + 'M kr.';
+  const leftEl = document.getElementById('tb-budget-left');
+  if (leftEl) leftEl.textContent = (left/1e6).toFixed(1) + 'M kr.';
+}
+
+// ═══════════════════════════════════════════
+// SAVE TEAM
+// ═══════════════════════════════════════════
+async function saveTeam() {
+  const filled = tbTeam.filter(Boolean).length;
+  if (filled < 11) return toast(`Udfyld alle 11 positioner (${filled}/11)`, 'error');
+  const used = tbTeam.reduce((s,p) => s + (p ? p.price*1e6 : 0), 0);
+  const budget_remaining = BUDGET - used;
+  const teamName = (currentProfile?.username || 'Spiller') + "'s Hold";
+  let teamId;
+  if (currentTeam) {
+    await db.from('teams').update({ formation: tbFormation, budget_remaining }).eq('id', currentTeam.id);
+    await db.from('team_players').delete().eq('team_id', currentTeam.id);
+    teamId = currentTeam.id;
+  } else {
+    const { data } = await db.from('teams').insert({ user_id: currentUser.id, name: teamName, formation: tbFormation, budget_remaining }).select().single();
+    teamId = data.id;
+  }
+  await db.from('team_players').insert(tbTeam.map((p, i) => ({ team_id: teamId, player_id: p.id, slot_index: i, is_captain: i === 0 })));
+  await loadTeam();
+  renderDashboard();
+  toast('Hold gemt! ✅', 'success');
+}
+
+// ═══════════════════════════════════════════
+// RANGLISTE
+// ═══════════════════════════════════════════
+async function loadLeaderboard() {
+  const el = document.getElementById('leaderboard-list');
+  el.innerHTML = '<div class="spinner"></div>';
+  const { data } = await db.from('teams')
+    .select('id, name, total_points, budget_remaining, user_id, team_players(players(price)), profiles(username)')
+    .order('total_points', { ascending: false })
+    .limit(100);
+
+  if (!data || data.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;">Ingen hold endnu — vær den første!</div>';
+    return;
+  }
+
+  let myRank = null;
+  el.innerHTML = data.map((t, i) => {
+    const isMe = t.user_id === currentUser.id;
+    if (isMe) myRank = i + 1;
+    const val = (t.team_players || []).reduce((s, tp) => s + (tp.players ? tp.players.price * 1e6 : 0), 0);
+    const medal = ['🥇','🥈','🥉'][i] || '';
+    return `<div class="lb-row ${isMe ? 'me' : ''}">
+      <div class="lb-rank ${i < 3 ? 'top3' : ''}">${medal || (i+1)}</div>
+      <div class="lb-info">
+        <div class="lb-name">${t.profiles?.username || 'Anonym'}</div>
+        <div class="lb-team">${t.name}</div>
+      </div>
+      <div class="lb-val">${(val/1e6).toFixed(1)}M</div>
+      <div class="lb-pts">${t.total_points}</div>
+    </div>`;
+  }).join('');
+
+  if (myRank) {
+    const badge = document.getElementById('rank-my-badge');
+    const num = document.getElementById('rank-my-num');
+    if (badge) badge.style.display = 'flex';
+    if (num) num.textContent = '#' + myRank;
+  }
+}
+
+// ═══════════════════════════════════════════
+// STATISTIK
+// ═══════════════════════════════════════════
+let statFilter = 'ALL';
+
+function setStatFilter(pos, btn) {
+  statFilter = pos;
+  document.querySelectorAll('#page-statistik .pos-btns .pos-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStatistik();
+}
+
+function renderStatistik() {
+  const search = (document.getElementById('stat-search')?.value || '').toLowerCase();
+  const sort = document.getElementById('stat-sort')?.value || 'total_points';
+  const el = document.getElementById('statistik-list');
+  if (!el) return;
+
+  let players = [...allPlayers];
+  if (statFilter !== 'ALL') players = players.filter(p => p.position === statFilter);
+  if (search) players = players.filter(p => p.name.toLowerCase().includes(search) || p.club.toLowerCase().includes(search));
+  players.sort((a, b) => {
+    if (sort === 'name') return a.name.localeCompare(b.name);
+    return (b[sort] || 0) - (a[sort] || 0);
+  });
+
+  if (players.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;">Ingen spillere fundet</div>';
+    return;
+  }
+
+  const posLabels = POS_LABELS;
+  const posBg = { GK:'rgba(245,158,11,0.15)', DEF:'rgba(20,184,166,0.15)', MID:'rgba(59,130,246,0.15)', ATT:'rgba(251,113,133,0.15)' };
+
+  el.innerHTML = players.map(p => {
+    const [bg,fg] = BC[p.club] || ['#444','#fff'];
+    const ptColor = p.total_points > 50 ? 'var(--teal)' : p.total_points > 20 ? 'var(--text)' : 'var(--text-muted)';
+    return `<div class="stat-row">
+      <div class="stat-badge" style="background:${bg};color:${fg};">${p.club}</div>
+      <div class="stat-player-name">${p.name}</div>
+      <div class="stat-club">${p.club}</div>
+      <div class="stat-pos-badge"><span class="stat-pos-pill" style="background:${posBg[p.position]};color:${PC[p.position]};">${p.position}</span></div>
+      <div class="stat-price">${p.price.toFixed(1)}M</div>
+      <div class="stat-pts" style="color:${ptColor};">${p.total_points}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// LIGAER
+// ═══════════════════════════════════════════
+function showCreateLeague() {
+  document.getElementById('create-league-form').classList.toggle('hidden');
+  document.getElementById('join-league-form').classList.add('hidden');
+}
+function showJoinLeague() {
+  document.getElementById('join-league-form').classList.toggle('hidden');
+  document.getElementById('create-league-form').classList.add('hidden');
+}
+
+async function createLeague() {
+  if (!currentTeam) return toast('Du skal have et hold for at oprette en liga', 'error');
+  const name = document.getElementById('league-name-input').value.trim();
+  if (!name) return toast('Skriv et liganavn', 'error');
+  const code = Math.random().toString(36).substring(2,8).toUpperCase();
+  const { data, error } = await db.from('leagues').insert({ name, code, created_by: currentUser.id }).select().single();
+  if (error) return toast('Fejl: ' + error.message, 'error');
+  await db.from('league_members').insert({ league_id: data.id, team_id: currentTeam.id });
+  document.getElementById('league-name-input').value = '';
+  document.getElementById('create-league-form').classList.add('hidden');
+  toast('Liga oprettet! Kode: ' + code, 'success');
+  loadLeagues();
+}
+
+async function joinLeague() {
+  if (!currentTeam) return toast('Du skal have et hold for at tilmelde dig en liga', 'error');
+  const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+  if (!code) return toast('Indtast en kode', 'error');
+  const { data: league, error } = await db.from('leagues').select('*').eq('code', code).single();
+  if (error || !league) return toast('Ingen liga fundet med den kode', 'error');
+  const { error: joinError } = await db.from('league_members').insert({ league_id: league.id, team_id: currentTeam.id });
+  if (joinError) return toast('Du er allerede med i denne liga', 'error');
+  document.getElementById('join-code-input').value = '';
+  document.getElementById('join-league-form').classList.add('hidden');
+  toast('Tilmeldt ' + league.name + '! ✅', 'success');
+  loadLeagues();
+}
+
+async function loadLeagues() {
+  const el = document.getElementById('leagues-list');
+  el.innerHTML = '<div class="spinner"></div>';
+
+  if (!currentTeam) {
+    el.innerHTML = `<div class="dash-pitch-card" style="padding:40px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">🏆</div>
+      <div style="font-family:var(--font-display);font-size:20px;font-weight:800;margin-bottom:8px;">Byg et hold først</div>
+      <div style="color:var(--text-muted);font-size:14px;margin-bottom:20px;">Du skal have et hold for at deltage i miniligaer</div>
+      <button class="btn btn-primary" onclick="showPage('byg-hold')">Byg hold →</button>
+    </div>`;
+    return;
+  }
+
+  const { data } = await db.from('league_members')
+    .select('leagues(id, name, code)')
+    .eq('team_id', currentTeam.id);
+
+  if (!data || data.length === 0) {
+    el.innerHTML = `<div class="dash-pitch-card" style="padding:40px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">🏆</div>
+      <div style="font-family:var(--font-display);font-size:20px;font-weight:800;margin-bottom:8px;">Ingen miniligaer endnu</div>
+      <div style="color:var(--text-muted);font-size:14px;">Opret en ny liga eller tilmeld dig med en invitationskode</div>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = '';
+  for (const m of data) {
+    if (!m.leagues) continue;
+    const lg = m.leagues;
+
+    // Fetch standings for this league
+    const { data: members } = await db.from('league_members')
+      .select('team_id, teams(id, name, total_points, user_id, profiles(username))')
+      .eq('league_id', lg.id)
+      .order('teams(total_points)', { ascending: false });
+
+    const rows = (members || [])
+      .filter(m2 => m2.teams)
+      .sort((a,b) => (b.teams?.total_points||0) - (a.teams?.total_points||0));
+
+    const standingsHtml = rows.length > 0 ? rows.map((r, i) => {
+      const t = r.teams;
+      const isMe = t.user_id === currentUser.id;
+      return `<div class="liga-row ${isMe ? 'me' : ''}">
+        <div class="liga-row-rank ${i < 3 ? 'top3' : ''}">${['🥇','🥈','🥉'][i] || (i+1)}</div>
+        <div class="liga-row-info">
+          <div class="liga-row-name">${t.profiles?.username || 'Anonym'}</div>
+          <div class="liga-row-team">${t.name}</div>
+        </div>
+        <div class="liga-row-pts">${t.total_points || 0}</div>
+      </div>`;
+    }).join('') : '<div style="padding:16px;color:var(--text-muted);font-size:13px;">Ingen deltagere endnu</div>';
+
+    el.innerHTML += `<div class="liga-card">
+      <div class="liga-card-header">
+        <div class="liga-card-icon">🏆</div>
+        <div class="liga-card-info">
+          <div class="liga-card-name">${lg.name}</div>
+          <div class="liga-card-meta">${rows.length} deltagere · <span class="liga-card-code" onclick="copyCode('${lg.code}')">${lg.code}</span></div>
+        </div>
+      </div>
+      <div class="liga-standings">${standingsHtml}</div>
+    </div>`;
+  }
+}
+
+function copyCode(code) {
+  navigator.clipboard.writeText(code);
+  toast('Kode kopieret: ' + code, 'success');
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+let toastTimer;
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
